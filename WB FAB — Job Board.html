@@ -1,0 +1,2101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>WB FAB — Job Board</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0c0d0f; --panel:#16181c; --panel2:#1d2024; --steel:#3a3f47;
+  --steel-light:#5a6270; --line:#2a2d33;
+  --amber:#ff8a1e; --amber-dim:#b85f0f; --cyan:#3ff0e0;
+  --text:#e8ebef; --text-dim:#9aa1ab;
+  --todo:#ff5c5c; --wip:#ffb020; --done:#3ff08c;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+*{box-sizing:border-box;}
+html,body{height:100%;margin:0;}
+body{
+  background:
+    radial-gradient(circle at 20% 0%, #1a1c20 0%, var(--bg) 55%),
+    repeating-linear-gradient(135deg, rgba(255,255,255,0.015) 0px, rgba(255,255,255,0.015) 2px, transparent 2px, transparent 8px);
+  color:var(--text); font-family:'Rajdhani',sans-serif; -webkit-font-smoothing:antialiased;
+}
+header{
+  position:sticky; top:0; z-index:20;
+  padding:calc(12px + env(safe-area-inset-top,0px)) 16px 10px;
+  background:linear-gradient(180deg, #131518 0%, #0f1012 100%);
+  border-bottom:2px solid var(--line);
+  display:flex; align-items:center; justify-content:space-between; gap:10px;
+  flex-wrap:wrap;
+}
+.brand-wrap{display:flex; align-items:center; gap:12px;}
+h1{
+  font-family:'Orbitron',sans-serif; font-size:16px; letter-spacing:1.5px; margin:0;
+  color:var(--text); line-height:1.2;
+}
+h1 span{display:block; font-size:10px; color:var(--amber); letter-spacing:3px; margin-top:2px;}
+.hdr-controls{display:flex; gap:8px; align-items:center; flex-wrap:wrap;}
+.syncbtn{
+  background:var(--panel2); border:1px solid var(--line); color:var(--text-dim);
+  font-family:'Orbitron',sans-serif; font-size:10px; letter-spacing:0.8px;
+  padding:9px 10px; border-radius:6px; display:flex; align-items:center; gap:6px;
+  cursor:pointer;
+}
+.syncbtn .sdot{width:7px; height:7px; border-radius:50%; background:var(--text-dim);}
+.syncbtn.connected{border-color:#2a6f68; color:var(--cyan);}
+.syncbtn.connected .sdot{background:var(--done); box-shadow:0 0 8px var(--done);}
+.syncbtn.syncing .sdot{background:var(--wip); box-shadow:0 0 8px var(--wip);}
+.syncbtn.error{border-color:#6b2a2a; color:#ff8080;}
+.syncbtn.error .sdot{background:var(--todo); box-shadow:0 0 8px var(--todo);}
+.addbtn{
+  background:linear-gradient(180deg,#ff9a3d,var(--amber-dim));
+  color:#1a0d00; border:none; font-family:'Orbitron'; font-weight:700; font-size:12px;
+  padding:10px 14px; border-radius:6px; letter-spacing:0.5px;
+  box-shadow:0 0 12px rgba(255,138,30,0.35), inset 0 1px 0 rgba(255,255,255,0.3);
+  white-space:nowrap; cursor:pointer;
+}
+
+.statusbar{
+  max-width:1160px; margin:10px auto 0; padding:0 14px;
+  display:flex; align-items:center; justify-content:space-between; gap:8px; flex-wrap:wrap;
+  font-size:12px; color:var(--text-dim);
+}
+.who-pill{
+  display:inline-flex; align-items:center; gap:6px; background:var(--panel);
+  border:1px solid var(--line); border-radius:6px; padding:4px 8px;
+}
+.who-pill select{
+  background:transparent; border:none; color:var(--amber); font-family:'Orbitron';
+  font-size:11px; padding:2px 4px; width:auto; cursor:pointer;
+}
+.sync-meta{display:flex; align-items:center; gap:8px; flex-wrap:wrap;}
+.refresh-btn{
+  background:var(--panel); border:1px solid var(--line); color:var(--text-dim);
+  border-radius:5px; padding:4px 8px; font-family:'Orbitron'; font-size:10px; cursor:pointer;
+}
+.refresh-btn:hover{color:var(--text); border-color:var(--steel-light);}
+
+/* Shop Metrics & Filter Bar */
+.shopbar{
+  max-width:1160px; margin:10px auto 0; padding:0 14px;
+  display:flex; flex-direction:column; gap:10px;
+}
+.kpi-row{
+  display:grid; grid-template-columns:repeat(3, 1fr); gap:8px;
+}
+.kpi-card{
+  background:var(--panel); border:1px solid var(--line); border-radius:8px;
+  padding:8px 10px; display:flex; flex-direction:column; gap:2px;
+}
+.kpi-lbl{font-size:10px; font-family:'Orbitron'; color:var(--text-dim); letter-spacing:0.8px;}
+.kpi-val{font-size:16px; font-family:'Orbitron'; font-weight:700; color:var(--text);}
+.kpi-val.amber{color:var(--amber);}
+.kpi-val.green{color:var(--done);}
+.kpi-val.cyan{color:var(--cyan);}
+
+.filter-row{
+  display:flex; gap:8px; align-items:center; flex-wrap:wrap;
+}
+.search-wrap{flex:1; min-width:180px; position:relative;}
+.search-wrap input{
+  width:100%; background:var(--panel); border:1px solid var(--line); color:var(--text);
+  padding:8px 12px; border-radius:6px; font-family:'Rajdhani'; font-size:14px;
+}
+.filter-pills{display:flex; gap:5px; flex-wrap:wrap;}
+.fpill{
+  background:var(--panel); border:1px solid var(--line); color:var(--text-dim);
+  font-family:'Orbitron'; font-size:10px; padding:7px 10px; border-radius:6px; cursor:pointer;
+}
+.fpill.active{background:rgba(255,138,30,0.14); border-color:var(--amber); color:var(--amber);}
+.fpill.arch-active{background:rgba(63,240,224,0.12); border-color:var(--cyan); color:var(--cyan);}
+
+main{
+  padding:14px; display:grid; grid-template-columns:1fr; gap:18px;
+  max-width:1160px; margin:0 auto;
+}
+@media(min-width:880px){
+  main{grid-template-columns:repeat(3, 1fr); align-items:start;}
+}
+.archive-section{
+  max-width:1160px; margin:0 auto 24px; padding:0 14px; display:none;
+}
+.archive-section.show{display:block;}
+.archive-header{
+  display:flex; align-items:center; justify-content:space-between; gap:10px;
+  margin-bottom:10px; padding-bottom:6px; border-bottom:1px solid var(--line);
+}
+.archive-grid{
+  display:grid; grid-template-columns:1fr; gap:10px;
+}
+@media(min-width:760px){
+  .archive-grid{grid-template-columns:repeat(2, 1fr);}
+}
+
+.col-title{
+  font-family:'Orbitron'; font-size:12px; letter-spacing:2px; margin:0 0 8px 2px;
+  display:flex; align-items:center; justify-content:space-between; gap:8px; color:var(--text-dim);
+}
+.col-title-left{display:flex; align-items:center; gap:8px;}
+.col-title-right{display:flex; align-items:center; gap:6px;}
+.col-count{
+  font-size:10px; background:var(--panel2); border:1px solid var(--line);
+  padding:2px 7px; border-radius:10px; color:var(--text);
+}
+.arch-done-btn{
+  background:var(--panel2); border:1px solid var(--line); color:var(--cyan);
+  font-family:'Orbitron'; font-size:9px; padding:3px 7px; border-radius:5px; cursor:pointer;
+}
+.arch-done-btn:hover{border-color:var(--cyan);}
+.dot{width:9px;height:9px;border-radius:2px;transform:rotate(45deg);}
+.dot.todo{background:var(--todo); box-shadow:0 0 8px var(--todo);}
+.dot.wip{background:var(--wip); box-shadow:0 0 8px var(--wip);}
+.dot.done{background:var(--done); box-shadow:0 0 8px var(--done);}
+.cards{display:flex; flex-direction:column; gap:10px;}
+.card{
+  background:linear-gradient(180deg,var(--panel2),var(--panel));
+  border:1px solid var(--line); border-left:4px solid var(--steel-light);
+  border-radius:8px; padding:10px; display:flex; gap:10px;
+  box-shadow:0 2px 6px rgba(0,0,0,0.4);
+}
+.card.pr-todo{border-left-color:var(--todo);}
+.card.pr-wip{border-left-color:var(--wip);}
+.card.pr-done{border-left-color:var(--done); opacity:0.86;}
+.thumb{
+  width:64px; height:64px; flex:0 0 64px; border-radius:6px; background:#0a0b0d;
+  border:1px solid var(--line); overflow:hidden; display:flex; align-items:center; justify-content:center;
+  color:var(--text-dim); font-size:9px; text-align:center; cursor:pointer;
+}
+.thumb img{width:100%;height:100%;object-fit:cover;}
+.cinfo{flex:1; min-width:0;}
+.crow1{display:flex; justify-content:space-between; align-items:flex-start; gap:6px;}
+.cname{font-weight:700; font-size:15px; color:var(--text); word-break:break-word;}
+.badges-right{display:flex; gap:4px; align-items:center; flex-wrap:wrap; justify-content:flex-end;}
+.prio{font-size:9px; font-family:'Orbitron'; padding:2px 6px; border-radius:4px; letter-spacing:0.5px; flex:0 0 auto;}
+.prio.high{background:rgba(255,92,92,0.15); color:#ff8080; border:1px solid #ff5c5c;}
+.prio.norm{background:rgba(63,240,224,0.1); color:var(--cyan); border:1px solid #2a6f68;}
+
+.owner-badge{
+  font-size:9px; font-family:'Orbitron'; padding:2px 6px; border-radius:4px;
+  background:var(--panel); border:1px solid var(--steel); color:var(--text); cursor:pointer;
+}
+.owner-badge.dylan{border-color:var(--amber-dim); color:var(--amber);}
+.owner-badge.jacob{border-color:#2a6f68; color:var(--cyan);}
+
+.cust-row{display:flex; align-items:center; justify-content:space-between; gap:6px; margin-top:2px; flex-wrap:wrap;}
+.cust{font-size:12px; color:var(--text-dim);}
+.price-pay{display:flex; align-items:center; gap:6px;}
+.price-tag{font-family:'Orbitron'; font-size:11px; color:var(--text); font-weight:700;}
+.pay-badge{
+  font-family:'Orbitron'; font-size:9px; padding:2px 6px; border-radius:4px; cursor:pointer;
+  border:1px solid var(--line);
+}
+.pay-badge.unpaid{background:rgba(255,92,92,0.12); color:#ff8080; border-color:#6b2a2a;}
+.pay-badge.deposit{background:rgba(255,176,32,0.14); color:var(--wip); border-color:#7a5210;}
+.pay-badge.paid{background:rgba(63,240,140,0.14); color:var(--done); border-color:#1f6b42;}
+
+.cmeta{display:flex; flex-wrap:wrap; gap:6px 10px; margin-top:6px; font-size:12px; color:var(--text-dim);}
+.cmeta b{color:var(--text); font-weight:600;}
+
+/* Shop Floor Step Checkboxes */
+.steps-row{
+  display:grid; grid-template-columns:repeat(4, 1fr); gap:4px; margin-top:8px;
+}
+.step-chip{
+  font-family:'Orbitron'; font-size:9px; padding:4px 2px; border-radius:4px;
+  border:1px solid var(--line); background:#101215; color:var(--text-dim);
+  text-align:center; cursor:pointer; user-select:none;
+}
+.step-chip.done{
+  background:rgba(63,240,140,0.14); border-color:#26784b; color:var(--done); font-weight:700;
+}
+
+.contact-row{display:flex; gap:6px; margin-top:7px; flex-wrap:wrap;}
+.contact-btn{
+  display:inline-flex; align-items:center; gap:4px; padding:4px 8px; border-radius:5px;
+  font-family:'Orbitron'; font-size:9px; text-decoration:none;
+  background:rgba(63,240,224,0.1); border:1px solid #2a6f68; color:var(--cyan);
+}
+.contact-btn.ready{
+  background:rgba(63,240,140,0.16); border-color:var(--done); color:var(--done);
+}
+
+.byline{font-size:11px; color:var(--text-dim); margin-top:5px; opacity:0.85; display:flex; justify-content:space-between; align-items:center;}
+.due{font-family:'Orbitron'; font-size:11px; margin-top:6px; color:var(--amber);}
+.due.late{color:var(--todo);}
+.actions{display:flex; gap:5px; margin-top:8px;}
+.actions button{
+  flex:1; font-size:10px; font-family:'Orbitron'; padding:6px 3px; border-radius:5px;
+  border:1px solid var(--line); background:var(--panel); color:var(--text-dim); cursor:pointer;
+}
+.actions button.active{background:var(--steel); color:var(--text); border-color:var(--steel-light);}
+.actions .del{flex:0 0 28px; color:#ff5c5c; border-color:#4a2020;}
+.actions .arch{flex:0 0 32px; color:var(--cyan); border-color:#224f4b;}
+.empty{color:var(--text-dim); font-size:13px; padding:16px; text-align:center; border:1px dashed var(--line); border-radius:8px;}
+
+.overlay{position:fixed; inset:0; background:rgba(0,0,0,0.65); display:none; align-items:flex-end; justify-content:center; z-index:50;}
+.overlay.show{display:flex;}
+.sheethead{display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:4px;}
+.sheethead-left{display:flex; align-items:center; gap:10px;}
+.backbtn{
+  background:none; border:none; color:var(--amber); font-family:'Orbitron'; font-size:11px;
+  padding:6px 0; letter-spacing:0.5px; flex:0 0 auto; cursor:pointer;
+}
+.sheet{
+  width:100%; max-width:540px; background:var(--panel); border-top:2px solid var(--amber);
+  border-radius:14px 14px 0 0; padding:16px 16px calc(20px + env(safe-area-inset-bottom,0px));
+  max-height:90vh; overflow-y:auto;
+}
+.sheet h2{font-family:'Orbitron'; font-size:14px; letter-spacing:1px; margin:0;}
+label{display:block; font-size:11px; color:var(--text-dim); letter-spacing:0.5px; margin:10px 0 4px;}
+input[type=text],input[type=password],input[type=number],input[type=date],input[type=tel],textarea,select{
+  width:100%; background:#0e0f11; border:1px solid var(--line); color:var(--text);
+  padding:10px; border-radius:6px; font-family:'Rajdhani'; font-size:14px;
+}
+textarea{resize:vertical; min-height:50px;}
+.row2{display:flex; gap:8px;}
+.row2>div{flex:1;}
+.row3 .unitcol{flex:0 0 68px;}
+.row3 select{padding:10px 4px;}
+
+.preset-wrap{display:flex; flex-wrap:wrap; gap:5px; margin-bottom:6px;}
+.preset-chip{
+  background:var(--panel2); border:1px solid var(--line); color:var(--amber);
+  font-family:'Rajdhani'; font-weight:600; font-size:12px; padding:4px 8px;
+  border-radius:5px; cursor:pointer;
+}
+.preset-chip:hover{border-color:var(--amber);}
+
+/* Photo Picker Zone & Visible Native File Input */
+.imgpick-zone{
+  display:flex; flex-direction:column; gap:8px; margin-top:4px;
+}
+.imgpick{
+  display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px;
+  border:1px dashed var(--amber); border-radius:8px; padding:12px 10px; text-align:center;
+  background:#0e0f11; color:var(--text); font-size:13px; font-weight:600;
+  min-height:64px; cursor:pointer;
+}
+.imgpick:hover{background:#14171c;}
+.imgpick small{color:var(--text-dim); font-size:11px; font-weight:500;}
+.imgpick img{max-width:100%; max-height:140px; border-radius:6px; display:block; margin:0 auto;}
+
+.native-file-bar{
+  display:flex; gap:6px; align-items:center; flex-wrap:wrap;
+}
+.visible-file-input{
+  flex:1; min-width:180px; background:#0e0f11; border:1px solid var(--line);
+  border-radius:6px; padding:6px; color:var(--text-dim); font-family:'Rajdhani'; font-size:12px;
+}
+.visible-file-input::file-selector-button{
+  background:linear-gradient(180deg,#ff9a3d,var(--amber-dim));
+  color:#1a0d00; border:none; font-family:'Orbitron'; font-weight:700; font-size:10px;
+  padding:7px 10px; border-radius:5px; margin-right:8px; cursor:pointer;
+}
+.visible-file-input::-webkit-file-upload-button{
+  background:linear-gradient(180deg,#ff9a3d,var(--amber-dim));
+  color:#1a0d00; border:none; font-family:'Orbitron'; font-weight:700; font-size:10px;
+  padding:7px 10px; border-radius:5px; margin-right:8px; cursor:pointer;
+}
+.sketch-open-btn{
+  background:var(--panel2); border:1px solid var(--cyan); color:var(--cyan);
+  font-family:'Orbitron'; font-size:10px; padding:9px 10px; border-radius:6px; cursor:pointer;
+  white-space:nowrap;
+}
+
+.clear-img{
+  background:none; border:none; color:#ff8080; font-size:12px; font-family:'Rajdhani'; font-weight:600;
+  margin-top:2px; padding:4px 8px; cursor:pointer; display:none; align-self:flex-start;
+}
+.clear-img.show{display:inline-block;}
+
+/* Photo & Sketch Studio Modal */
+.sketch-canvas-wrap{
+  background:#0a0b0d; border:1px solid var(--line); border-radius:8px;
+  margin-top:8px; overflow:hidden; position:relative; touch-action:none;
+}
+#sketchCanvas{
+  display:block; width:100%; height:220px; cursor:crosshair; touch-action:none;
+}
+.sketch-tools{
+  display:flex; gap:6px; margin-top:8px; flex-wrap:wrap; align-items:center;
+}
+.sketch-tool-btn{
+  background:var(--panel2); border:1px solid var(--line); color:var(--text);
+  font-family:'Orbitron'; font-size:10px; padding:6px 10px; border-radius:5px; cursor:pointer;
+}
+.sketch-tool-btn.active{border-color:var(--amber); color:var(--amber);}
+
+.sheetbtns{display:flex; gap:8px; margin-top:16px;}
+.sheetbtns button{flex:1; padding:12px; border-radius:7px; font-family:'Orbitron'; font-size:12px; border:none; cursor:pointer;}
+.sheetbtns .save{background:linear-gradient(180deg,#ff9a3d,var(--amber-dim)); color:#1a0d00; font-weight:700;}
+.sheetbtns .cancel{background:var(--panel2); color:var(--text-dim); border:1px solid var(--line);}
+.sheetbtns .danger{background:#c93b3b; color:#fff; font-weight:700;}
+
+.mode-tabs{display:flex; gap:6px; margin:10px 0;}
+.mode-tab{
+  flex:1; padding:8px 4px; font-family:'Orbitron'; font-size:10px; border-radius:6px;
+  border:1px solid var(--line); background:#0e0f11; color:var(--text-dim); cursor:pointer;
+}
+.mode-tab.active{border-color:var(--amber); color:var(--amber); background:rgba(255,138,30,0.1);}
+.sync-help{
+  background:#0e0f11; border:1px solid var(--line); border-radius:8px;
+  padding:10px 12px; font-size:12px; color:var(--text-dim); line-height:1.45; margin-top:8px;
+}
+.sync-help b{color:var(--text);}
+.sync-help code{color:var(--cyan); font-size:11px;}
+.share-box{
+  margin-top:12px; padding:10px; border-radius:8px; background:rgba(63,240,224,0.06);
+  border:1px solid #2a6f68;
+}
+.share-btn{
+  width:100%; margin-top:6px; padding:10px; border-radius:6px; border:1px solid var(--cyan);
+  background:rgba(63,240,224,0.12); color:var(--cyan); font-family:'Orbitron'; font-size:11px;
+  cursor:pointer;
+}
+
+.imgview{position:fixed; inset:0; background:rgba(0,0,0,0.9); display:none; align-items:center; justify-content:center; z-index:60;}
+.imgview.show{display:flex;}
+.imgview img{max-width:92%; max-height:80vh; border-radius:8px;}
+.bellbtn{
+  background:var(--panel2); border:1px solid var(--line); color:var(--text-dim);
+  font-size:16px; padding:8px 10px; border-radius:6px; position:relative; cursor:pointer;
+}
+.bellbtn.on{border-color:var(--amber); color:var(--amber); box-shadow:0 0 8px rgba(255,138,30,0.4);}
+.toastwrap{position:fixed; top:calc(10px + env(safe-area-inset-top,0px)); left:0; right:0; z-index:80; display:flex; flex-direction:column; align-items:center; gap:6px; pointer-events:none;}
+.toast{
+  background:var(--panel2); border:1px solid var(--amber); color:var(--text); font-size:13px;
+  padding:10px 14px; border-radius:8px; box-shadow:0 4px 14px rgba(0,0,0,0.5); max-width:90%;
+  animation:slidein 0.25s ease-out;
+}
+@keyframes slidein{from{transform:translateY(-14px);opacity:0;}to{transform:translateY(0);opacity:1;}}
+</style>
+</head>
+<body>
+<header>
+  <div class="brand-wrap">
+    <h1>WB FAB<span>METAL FABRICATION — JOB BOARD</span></h1>
+  </div>
+  <div class="hdr-controls">
+    <button class="syncbtn" id="syncBtn" onclick="openSyncSheet()">
+      <span class="sdot"></span>
+      <span id="syncBtnLabel">SETUP SYNC</span>
+    </button>
+    <button class="bellbtn" id="bellBtn" onclick="toggleAlerts()">🔔</button>
+    <button class="addbtn" onclick="openSheet()">+ NEW ORDER</button>
+  </div>
+</header>
+
+<div class="statusbar">
+  <div class="who-pill">
+    <span>Posting as:</span>
+    <select id="whoSelect" onchange="setWho(this.value)">
+      <option value="Dylan">Dylan</option>
+      <option value="Jacob">Jacob</option>
+    </select>
+  </div>
+  <div class="sync-meta">
+    <span id="lastSyncText">Local mode — tap Setup Sync to link devices</span>
+    <button class="refresh-btn" id="refreshBtn" onclick="manualSync()">↻ SYNC NOW</button>
+  </div>
+</div>
+
+<!-- KPI & Filter Bar -->
+<div class="shopbar">
+  <div class="kpi-row">
+    <div class="kpi-card">
+      <span class="kpi-lbl">ACTIVE PIPELINE</span>
+      <span class="kpi-val amber" id="kpi-pipeline">$0</span>
+    </div>
+    <div class="kpi-card">
+      <span class="kpi-lbl">PAID / COLLECTED</span>
+      <span class="kpi-val green" id="kpi-paid">$0</span>
+    </div>
+    <div class="kpi-card">
+      <span class="kpi-lbl">FINISHED JOBS</span>
+      <span class="kpi-val cyan" id="kpi-completed">0</span>
+    </div>
+  </div>
+  <div class="filter-row">
+    <div class="search-wrap">
+      <input type="text" id="searchInput" placeholder="Search project, customer, steel, notes..." oninput="setSearchQuery(this.value)">
+    </div>
+    <div class="filter-pills">
+      <button type="button" class="fpill active" id="flt-all" onclick="setOwnerFilter('all')">ALL</button>
+      <button type="button" class="fpill" id="flt-Dylan" onclick="setOwnerFilter('Dylan')">DYLAN</button>
+      <button type="button" class="fpill" id="flt-Jacob" onclick="setOwnerFilter('Jacob')">JACOB</button>
+      <button type="button" class="fpill" id="archiveToggleBtn" onclick="toggleArchiveView()">📦 ARCHIVE (<span id="cnt-archive">0</span>)</button>
+    </div>
+  </div>
+</div>
+
+<div class="toastwrap" id="toastwrap"></div>
+
+<main id="main">
+  <div>
+    <div class="col-title">
+      <span class="col-title-left"><span class="dot todo"></span>TO DO</span>
+      <span class="col-count" id="cnt-todo">0</span>
+    </div>
+    <div class="cards" id="col-todo"></div>
+  </div>
+  <div>
+    <div class="col-title">
+      <span class="col-title-left"><span class="dot wip"></span>IN PROGRESS</span>
+      <span class="col-count" id="cnt-wip">0</span>
+    </div>
+    <div class="cards" id="col-wip"></div>
+  </div>
+  <div>
+    <div class="col-title">
+      <span class="col-title-left"><span class="dot done"></span>DONE</span>
+      <span class="col-title-right">
+        <button type="button" class="arch-done-btn" id="archPaidBtn" onclick="archiveCompletedOrders()">ARCHIVE DONE</button>
+        <span class="col-count" id="cnt-done">0</span>
+      </span>
+    </div>
+    <div class="cards" id="col-done"></div>
+  </div>
+</main>
+
+<!-- Completed & Archived Drawer Section -->
+<section class="archive-section" id="archiveSection">
+  <div class="archive-header">
+    <div class="col-title" style="margin:0;">
+      <span class="col-title-left">📦 ARCHIVED &amp; PICKED-UP ORDERS</span>
+    </div>
+    <button type="button" class="refresh-btn" onclick="toggleArchiveView()">HIDE ARCHIVE</button>
+  </div>
+  <div class="archive-grid" id="col-archive"></div>
+</section>
+
+<!-- Order Add/Edit Modal -->
+<div class="overlay" id="overlay" onclick="if(event.target.id==='overlay')closeSheet()">
+  <div class="sheet">
+    <div class="sheethead">
+      <div class="sheethead-left">
+        <button class="backbtn" onclick="closeSheet()">← Back</button>
+        <h2 id="sheetTitle">NEW ORDER</h2>
+      </div>
+    </div>
+    <label>Project / sign name</label>
+    <input type="text" id="f-name" placeholder="e.g. Johnson Gate Bracket">
+
+    <div class="row2">
+      <div>
+        <label>Customer</label>
+        <input type="text" id="f-customer" placeholder="Customer name">
+      </div>
+      <div>
+        <label>Customer phone (for pickup text)</label>
+        <input type="tel" id="f-phone" placeholder="e.g. 307-555-0192">
+      </div>
+    </div>
+
+    <div class="row2">
+      <div>
+        <label>Price / Quote ($)</label>
+        <input type="number" id="f-price" min="0" step="1" placeholder="e.g. 185">
+      </div>
+      <div>
+        <label>Payment status</label>
+        <select id="f-pay">
+          <option value="unpaid">Unpaid</option>
+          <option value="deposit">Deposit Paid</option>
+          <option value="paid">Paid in Full</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="row2">
+      <div>
+        <label>Assigned to</label>
+        <select id="f-assignee">
+          <option value="Both">Both (Dylan &amp; Jacob)</option>
+          <option value="Dylan">Dylan</option>
+          <option value="Jacob">Jacob</option>
+        </select>
+      </div>
+      <div>
+        <label>Priority</label>
+        <select id="f-prio"><option value="norm">Normal</option><option value="high">Rush / High</option></select>
+      </div>
+    </div>
+
+    <label>Dimensions</label>
+    <div class="row2 row3">
+      <div><input type="text" id="f-width" placeholder="Width" inputmode="decimal"></div>
+      <div><input type="text" id="f-height" placeholder="Height" inputmode="decimal"></div>
+      <div class="unitcol"><select id="f-unit"><option value="in">in</option><option value="mm">mm</option><option value="cm">cm</option></select></div>
+    </div>
+
+    <label>Steel size / type (tap a preset or type custom)</label>
+    <div class="preset-wrap">
+      <button type="button" class="preset-chip" onclick="applySteelPreset('1/16in mild steel', 'Plasma: 45A / 73 PSI')">1/16" Mild (45A/73PSI)</button>
+      <button type="button" class="preset-chip" onclick="applySteelPreset('1/8in mild steel', 'Plasma: 45A / 73 PSI')">1/8" Mild (45A/73PSI)</button>
+      <button type="button" class="preset-chip" onclick="applySteelPreset('3/16in mild plate', '')">3/16" Plate</button>
+      <button type="button" class="preset-chip" onclick="applySteelPreset('1/4in A36 plate', '')">1/4" A36 Plate</button>
+      <button type="button" class="preset-chip" onclick="applySteelPreset('2x2 sq tube', '')">2x2 Sq Tube</button>
+    </div>
+    <input type="text" id="f-steel" placeholder="e.g. 1/8in mild steel, 1/4in A36 plate">
+
+    <div class="row2">
+      <div><label>Qty</label><input type="number" id="f-qty" min="1" value="1"></div>
+      <div><label>Due date</label><input type="date" id="f-due"></div>
+    </div>
+
+    <label>⚠ Special instructions &amp; plasma / weld notes</label>
+    <textarea id="f-notes" placeholder="Weld type, powder coat / raw finish, mounting holes, plasma settings..."></textarea>
+
+    <label>Photo / sketch</label>
+    <div class="imgpick-zone" id="imgpickZone">
+      <div class="imgpick" id="imgpick" onclick="openPhotoStudio()">📷 Tap to add photo or sketch<small>Upload from Phone/PC, paste image, or draw a shop sketch</small></div>
+      <div class="native-file-bar">
+        <input type="file" id="f-img" class="visible-file-input" accept="image/*">
+        <button type="button" class="sketch-open-btn" onclick="openPhotoStudio()">✏ DRAW / PASTE</button>
+      </div>
+      <button type="button" class="clear-img" id="clearImgBtn" onclick="clearPickedImage()">✕ Remove photo</button>
+    </div>
+
+    <div class="sheetbtns">
+      <button class="cancel" onclick="closeSheet()">CANCEL</button>
+      <button class="save" onclick="saveOrder()">SAVE ORDER</button>
+    </div>
+  </div>
+</div>
+
+<!-- Photo Upload & Shop Sketch Studio Modal -->
+<div class="overlay" id="photoOverlay" style="z-index:55;" onclick="if(event.target.id==='photoOverlay')closePhotoStudio()">
+  <div class="sheet">
+    <div class="sheethead">
+      <div class="sheethead-left">
+        <button class="backbtn" onclick="closePhotoStudio()">← Back</button>
+        <h2>ADD PHOTO OR SHOP SKETCH</h2>
+      </div>
+    </div>
+
+    <label>1. Upload from Phone Camera, Gallery, or PC</label>
+    <div class="row2" style="margin-top:4px;">
+      <div>
+        <button type="button" class="addbtn" style="width:100%;padding:11px;" onclick="triggerNativeFileInput(false)">📁 BROWSE PHONE / PC</button>
+      </div>
+      <div>
+        <button type="button" class="sketch-open-btn" style="width:100%;padding:11px;" onclick="triggerNativeFileInput(true)">📷 CAMERA PHOTO</button>
+      </div>
+    </div>
+    <input type="file" id="f-img-cam" accept="image/*" capture="environment" style="display:none;">
+
+    <label>2. Or Paste Image URL / Clipboard</label>
+    <div class="row2">
+      <input type="text" id="f-img-url" placeholder="Paste image link (https://... or data:image/...)">
+      <button type="button" class="sketch-tool-btn" style="flex:0 0 90px;" onclick="applyImageUrlInput()">USE LINK</button>
+    </div>
+
+    <label>3. Or Draw a Quick Part / Sign Sketch Right Here</label>
+    <div class="sketch-tools">
+      <button type="button" class="sketch-tool-btn active" id="penAmber" onclick="setSketchColor('#ff8a1e','penAmber')">🟠 Cut Line</button>
+      <button type="button" class="sketch-tool-btn" id="penCyan" onclick="setSketchColor('#3ff0e0','penCyan')">🔵 Dim / Text</button>
+      <button type="button" class="sketch-tool-btn" id="penWhite" onclick="setSketchColor('#e8ebef','penWhite')">⚪ Steel</button>
+      <button type="button" class="sketch-tool-btn" onclick="drawBracketTemplate()">📐 Bracket Grid</button>
+      <button type="button" class="sketch-tool-btn" onclick="clearSketchPad()">🗑 Clear</button>
+    </div>
+    <div class="sketch-canvas-wrap">
+      <canvas id="sketchCanvas" width="480" height="220"></canvas>
+    </div>
+
+    <div class="sheetbtns">
+      <button class="cancel" onclick="closePhotoStudio()">CANCEL</button>
+      <button class="save" onclick="saveSketchAsPhoto()">ATTACH SKETCH</button>
+    </div>
+  </div>
+</div>
+
+<!-- Cloud Sync Setup Modal -->
+<div class="overlay" id="syncOverlay" onclick="if(event.target.id==='syncOverlay')closeSyncSheet()">
+  <div class="sheet">
+    <div class="sheethead">
+      <div class="sheethead-left">
+        <button class="backbtn" onclick="closeSyncSheet()">← Back</button>
+        <h2>LIVE BROTHER SYNC</h2>
+      </div>
+    </div>
+
+    <div class="mode-tabs">
+      <button type="button" class="mode-tab active" id="tab-gist" onclick="switchSyncTab('gist')">GITHUB GIST (BEST)</button>
+      <button type="button" class="mode-tab" id="tab-github" onclick="switchSyncTab('github')">GITHUB REPO</button>
+      <button type="button" class="mode-tab" id="tab-firebase" onclick="switchSyncTab('firebase')">FIREBASE DB</button>
+    </div>
+
+    <div id="panel-gist">
+      <div class="sync-help">
+        <b>Zero Rebuild Spam (Recommended for GitHub):</b><br>
+        Saves your board to a private <code>wb-fab-orders.json</code> GitHub Gist so moving cards is instant and <b>never triggers GitHub Pages site rebuilds</b>.
+        <ol style="margin:6px 0 0 16px;padding:0;">
+          <li>In GitHub → <b>Settings → Developer settings → Personal access tokens (classic or fine-grained)</b>, enable <b>Gists</b> permission.</li>
+          <li>Paste the token below and leave Gist ID blank—the app will auto-create your secret Gist on save!</li>
+        </ol>
+      </div>
+      <label>GitHub Personal Access Token (with Gist scope)</label>
+      <input type="password" id="s-gist-token" placeholder="ghp_... or github_pat_...">
+      <label>Secret Gist ID (leave blank to auto-create)</label>
+      <input type="text" id="s-gist-id" placeholder="Auto-filled on first save">
+    </div>
+
+    <div id="panel-github" style="display:none;">
+      <div class="sync-help">
+        <b>Sync to a dedicated branch in your GitHub repo:</b><br>
+        Defaults to branch <code>shop-data</code> instead of <code>main</code> so updating jobs doesn't trigger unnecessary GitHub Pages deployments.
+      </div>
+      <label>GitHub Repository (owner/repo)</label>
+      <input type="text" id="s-gh-repo" placeholder="e.g. dricker16/wb-fab">
+      <label>GitHub Personal Access Token</label>
+      <input type="password" id="s-gh-token" placeholder="github_pat_... or ghp_...">
+      <label>Data Branch (use shop-data to avoid Pages rebuilds)</label>
+      <input type="text" id="s-gh-branch" placeholder="shop-data" value="shop-data">
+    </div>
+
+    <div id="panel-firebase" style="display:none;">
+      <div class="sync-help">
+        <b>Alternative: Free Firebase Realtime DB URL</b><br>
+        Create a free Realtime Database at <b>console.firebase.google.com</b> and paste the URL below.
+      </div>
+      <label>Firebase Realtime Database URL</label>
+      <input type="text" id="s-fb-url" placeholder="https://your-project-default-rtdb.firebaseio.com">
+    </div>
+
+    <div class="share-box">
+      <div style="font-size:12px;color:var(--text);">
+        <b>One-Tap Setup for Jacob:</b> Once connected, tap below and text the link to your brother. Opening it on his iPhone links his board immediately.
+      </div>
+      <button type="button" class="share-btn" id="copyInviteBtn" onclick="copyInviteLink()">🔗 COPY INVITE LINK FOR BROTHER</button>
+    </div>
+
+    <div class="sheetbtns">
+      <button class="cancel" onclick="disconnectSync()">LOCAL ONLY</button>
+      <button class="save" onclick="saveSyncSettings()">SAVE &amp; CONNECT</button>
+    </div>
+  </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="overlay" id="delOverlay" onclick="if(event.target.id==='delOverlay')closeDelModal()">
+  <div class="sheet" style="max-width:400px;">
+    <h2>REMOVE ORDER?</h2>
+    <p id="delOrderText" style="color:var(--text-dim);font-size:14px;margin:8px 0 16px;">Are you sure you want to remove this job from the board?</p>
+    <div class="sheetbtns">
+      <button class="cancel" onclick="closeDelModal()">CANCEL</button>
+      <button class="danger" id="confirmDelBtn" onclick="confirmDeleteOrder()">DELETE</button>
+    </div>
+  </div>
+</div>
+
+<div class="imgview" id="imgview" onclick="this.classList.remove('show')"><img id="imgviewImg" alt="Job attachment"></div>
+
+<script>
+const STORAGE_KEY = 'wbfab_orders_v3';
+const TOMBSTONE_KEY = 'wbfab_deleted_v3';
+const SYNC_CFG_KEY = 'wbfab_sync_cfg_v3';
+const WHO_KEY = 'wbfab_who';
+const ALERTS_KEY = 'wbfab_alerts';
+
+const STEP_KEYS = [
+  { key: 'cad', label: 'CAD' },
+  { key: 'cut', label: 'CUT' },
+  { key: 'weld', label: 'WELD' },
+  { key: 'finish', label: 'FINISH' }
+];
+
+let orders = [];
+let deletedMap = {};
+let editId = null;
+let pendingDeleteId = null;
+let pendingImgData = null;
+let prevState = null;
+let alertsOn = false;
+let currentWho = 'Dylan';
+let ownerFilter = 'all';
+let searchQuery = '';
+let showArchive = false;
+let syncTab = 'gist';
+let syncConfig = {
+  mode: 'none',
+  gistToken: '',
+  gistId: '',
+  ghRepo: '',
+  ghToken: '',
+  ghBranch: 'shop-data',
+  fbUrl: ''
+};
+let ghFileSha = null;
+let isSyncing = false;
+let pollTimer = null;
+
+// Sketchpad state
+let sketchColor = '#ff8a1e';
+let isDrawingSketch = false;
+let lastSketchPt = null;
+
+function safeGetStorage(key, fallback) {
+  try {
+    const val = localStorage.getItem(key);
+    return val !== null ? val : fallback;
+  } catch (e) {
+    return fallback;
+  }
+}
+
+function safeSetStorage(key, val) {
+  try {
+    localStorage.setItem(key, val);
+  } catch (e) {}
+}
+
+function defaultSteps(cad = false, cut = false, weld = false, finish = false) {
+  return { cad: Boolean(cad), cut: Boolean(cut), weld: Boolean(weld), finish: Boolean(finish) };
+}
+
+function normalizeOrder(o) {
+  return Object.assign({
+    id: 'job-' + Date.now(),
+    name: 'Untitled',
+    customer: '',
+    phone: '',
+    price: '',
+    payStatus: 'unpaid',
+    assignee: 'Both',
+    width: '',
+    height: '',
+    unit: 'in',
+    dims: '',
+    steel: '',
+    qty: '1',
+    due: '',
+    priority: 'norm',
+    notes: '',
+    steps: defaultSteps(),
+    status: 'todo',
+    archived: false,
+    imgData: null,
+    updatedBy: 'Dylan',
+    updatedAt: Date.now()
+  }, o, {
+    steps: Object.assign(defaultSteps(), (o && o.steps) ? o.steps : {})
+  });
+}
+
+function loadLocalData() {
+  alertsOn = (safeGetStorage(ALERTS_KEY, '0') === '1');
+  currentWho = safeGetStorage(WHO_KEY, 'Dylan') || 'Dylan';
+  const whoEl = document.getElementById('whoSelect');
+  if (whoEl) whoEl.value = currentWho;
+
+  try {
+    const rawCfg = safeGetStorage(SYNC_CFG_KEY, '') || safeGetStorage('wbfab_sync_cfg_v2', '');
+    if (rawCfg) {
+      const parsed = JSON.parse(rawCfg);
+      syncConfig = Object.assign(syncConfig, parsed);
+    }
+  } catch (e) {}
+
+  try {
+    const rawDel = safeGetStorage(TOMBSTONE_KEY, '') || safeGetStorage('wbfab_deleted_v2', '');
+    if (rawDel) deletedMap = JSON.parse(rawDel) || {};
+  } catch (e) {
+    deletedMap = {};
+  }
+
+  try {
+    const rawOrders = safeGetStorage(STORAGE_KEY, '') || safeGetStorage('wbfab_orders_v2', '');
+    if (rawOrders) {
+      const parsed = JSON.parse(rawOrders) || [];
+      orders = parsed.map(normalizeOrder);
+    } else {
+      orders = [
+        normalizeOrder({
+          id: 'sample-wbfab-1',
+          name: 'Custom Elk Mountain Ranch Sign',
+          customer: 'Miller Ranch',
+          phone: '307-555-0148',
+          price: '320',
+          payStatus: 'deposit',
+          assignee: 'Dylan',
+          width: '36',
+          height: '24',
+          unit: 'in',
+          dims: '36 x 24 in',
+          steel: '1/8in mild steel',
+          qty: '1',
+          due: todayOffsetStr(3),
+          priority: 'high',
+          notes: 'Plasma: 45A / 73 PSI. Matte black powder coat, weld 2x2 angle mounting brackets on back.',
+          steps: defaultSteps(true, true, false, false),
+          status: 'wip',
+          archived: false,
+          updatedBy: 'Dylan',
+          updatedAt: Date.now() - 3600000
+        }),
+        normalizeOrder({
+          id: 'sample-wbfab-2',
+          name: 'Heavy Duty Trailer Tie-Down Brackets',
+          customer: 'Johnson Hauling',
+          phone: '307-555-0199',
+          price: '160',
+          payStatus: 'unpaid',
+          assignee: 'Jacob',
+          width: '6',
+          height: '4',
+          unit: 'in',
+          dims: '6 x 4 in',
+          steel: '1/4in A36 plate',
+          qty: '8',
+          due: todayOffsetStr(5),
+          priority: 'norm',
+          notes: '1/2in plasma pierced bolt holes, raw steel deburred.',
+          steps: defaultSteps(true, false, false, false),
+          status: 'todo',
+          archived: false,
+          updatedBy: 'Jacob',
+          updatedAt: Date.now() - 1800000
+        }),
+        normalizeOrder({
+          id: 'sample-wbfab-3',
+          name: 'Bighorn Address Plaque #60',
+          customer: 'Carter Residence',
+          phone: '307-555-0122',
+          price: '145',
+          payStatus: 'paid',
+          assignee: 'Both',
+          width: '24',
+          height: '14',
+          unit: 'in',
+          dims: '24 x 14 in',
+          steel: '1/16in mild steel',
+          qty: '1',
+          due: todayOffsetStr(-1),
+          priority: 'norm',
+          notes: 'Plasma: 45A / 73 PSI. Clear coat over torched patina.',
+          steps: defaultSteps(true, true, true, true),
+          status: 'done',
+          archived: false,
+          updatedBy: 'Dylan',
+          updatedAt: Date.now() - 900000
+        })
+      ];
+      saveLocalOrders();
+    }
+  } catch (e) {
+    orders = [];
+  }
+}
+
+function saveLocalOrders() {
+  safeSetStorage(STORAGE_KEY, JSON.stringify(orders));
+  safeSetStorage(TOMBSTONE_KEY, JSON.stringify(deletedMap));
+}
+
+function todayOffsetStr(days) {
+  const d = new Date();
+  d.setDate(d.getDate() + days);
+  return d.toISOString().slice(0, 10);
+}
+
+function checkUrlInviteHash() {
+  try {
+    const h = window.location.hash || '';
+    if (h.startsWith('#sync=')) {
+      const encoded = h.slice(6);
+      const decoded = JSON.parse(atob(decodeURIComponent(encoded)));
+      if (decoded && decoded.mode) {
+        syncConfig = Object.assign(syncConfig, decoded);
+        safeSetStorage(SYNC_CFG_KEY, JSON.stringify(syncConfig));
+        if (window.history && window.history.replaceState) {
+          window.history.replaceState(null, '', window.location.pathname + window.location.search);
+        }
+        toast('Brother Sync connected automatically!');
+      }
+    }
+  } catch (e) {
+    toast('Invalid sync invite link.');
+  }
+}
+
+function setWho(val) {
+  currentWho = val === 'Jacob' ? 'Jacob' : 'Dylan';
+  safeSetStorage(WHO_KEY, currentWho);
+  toast(`Active user set to ${currentWho}`);
+}
+
+function setOwnerFilter(owner) {
+  ownerFilter = owner;
+  ['all', 'Dylan', 'Jacob'].forEach(k => {
+    const btn = document.getElementById('flt-' + k);
+    if (btn) btn.classList.toggle('active', k === owner);
+  });
+  render();
+}
+
+function setSearchQuery(q) {
+  searchQuery = (q || '').trim().toLowerCase();
+  render();
+}
+
+function toggleArchiveView() {
+  showArchive = !showArchive;
+  const sec = document.getElementById('archiveSection');
+  const btn = document.getElementById('archiveToggleBtn');
+  if (sec) sec.classList.toggle('show', showArchive);
+  if (btn) btn.classList.toggle('arch-active', showArchive);
+  render();
+}
+
+function applySteelPreset(steelText, plasmaNote) {
+  const steelInput = document.getElementById('f-steel');
+  const notesInput = document.getElementById('f-notes');
+  if (steelInput) steelInput.value = steelText;
+  if (plasmaNote && notesInput) {
+    const cur = notesInput.value.trim();
+    if (!cur.toLowerCase().includes('45a')) {
+      notesInput.value = cur ? `${plasmaNote} • ${cur}` : plasmaNote;
+    }
+  }
+  toast(`Preset applied: ${steelText}`);
+}
+
+function updateBell() {
+  const btn = document.getElementById('bellBtn');
+  if (btn) btn.classList.toggle('on', alertsOn);
+}
+
+async function toggleAlerts() {
+  alertsOn = !alertsOn;
+  safeSetStorage(ALERTS_KEY, alertsOn ? '1' : '0');
+  if (alertsOn && 'Notification' in window && Notification.permission === 'default') {
+    try { await Notification.requestPermission(); } catch (e) {}
+  }
+  updateBell();
+  toast(alertsOn ? "Alerts on — you'll get a banner when your brother updates jobs." : "Alerts off.");
+}
+
+function toast(msg) {
+  const wrap = document.getElementById('toastwrap');
+  if (!wrap) return;
+  const t = document.createElement('div');
+  t.className = 'toast';
+  t.textContent = msg;
+  wrap.appendChild(t);
+  setTimeout(() => t.remove(), 4200);
+}
+
+function notify(msg) {
+  if (!alertsOn) return;
+  toast(msg);
+  if ('Notification' in window && Notification.permission === 'granted') {
+    try { new Notification('WB Fab Job Board', { body: msg }); } catch (e) {}
+  }
+}
+
+function updateSyncIndicator(state, detailText) {
+  const btn = document.getElementById('syncBtn');
+  const lbl = document.getElementById('syncBtnLabel');
+  const meta = document.getElementById('lastSyncText');
+  if (!btn || !lbl || !meta) return;
+
+  btn.classList.remove('connected', 'syncing', 'error');
+  if (state === 'connected') {
+    btn.classList.add('connected');
+    lbl.textContent = syncConfig.mode === 'gist' ? 'GIST LIVE' : (syncConfig.mode === 'github' ? 'GITHUB LIVE' : 'CLOUD LIVE');
+  } else if (state === 'syncing') {
+    btn.classList.add('syncing');
+    lbl.textContent = 'SYNCING...';
+  } else if (state === 'error') {
+    btn.classList.add('error');
+    lbl.textContent = 'SYNC ERR';
+  } else {
+    lbl.textContent = 'SETUP SYNC';
+  }
+  if (detailText) meta.textContent = detailText;
+}
+
+function recordStateSnapshot(list) {
+  const map = {};
+  list.forEach(o => { map[o.id] = `${o.status}|${o.archived ? 1 : 0}`; });
+  return map;
+}
+
+function mergeRemoteState(remoteOrders, remoteDeleted) {
+  const rDel = remoteDeleted || {};
+  for (const [id, ts] of Object.entries(rDel)) {
+    if (!deletedMap[id] || ts > deletedMap[id]) {
+      deletedMap[id] = ts;
+    }
+  }
+
+  const byId = new Map();
+  orders.forEach(o => {
+    if (!deletedMap[o.id] || (o.updatedAt || 0) > deletedMap[o.id]) {
+      byId.set(o.id, normalizeOrder(o));
+    }
+  });
+
+  let changed = false;
+  (remoteOrders || []).forEach(rawRo => {
+    if (!rawRo || !rawRo.id) return;
+    const ro = normalizeOrder(rawRo);
+    if (deletedMap[ro.id] && deletedMap[ro.id] >= (ro.updatedAt || 0)) {
+      return;
+    }
+    const local = byId.get(ro.id);
+    if (!local) {
+      byId.set(ro.id, ro);
+      changed = true;
+      if (prevState && !prevState[ro.id]) {
+        notify(`New job from ${ro.updatedBy || 'Shop'}: ${ro.name || 'Untitled'}`);
+      }
+    } else if ((ro.updatedAt || 0) > (local.updatedAt || 0)) {
+      if (local.status !== ro.status) {
+        const label = ro.status === 'wip' ? 'moved to In Progress' : ro.status === 'done' ? 'marked Finished' : 'moved to To Do';
+        notify(`${ro.name || 'Job'} ${label} (${ro.updatedBy || 'Shop'})`);
+      }
+      byId.set(ro.id, ro);
+      changed = true;
+    }
+  });
+
+  const beforeLen = orders.length;
+  orders = Array.from(byId.values()).filter(o => !deletedMap[o.id] || (o.updatedAt || 0) > deletedMap[o.id]);
+  if (orders.length !== beforeLen) changed = true;
+
+  prevState = recordStateSnapshot(orders);
+  saveLocalOrders();
+  render();
+  return changed;
+}
+
+async function syncWithCloud(pushChanges = false) {
+  if (syncConfig.mode === 'none') {
+    updateSyncIndicator('none', 'Local mode — tap Setup Sync to link with your brother');
+    return;
+  }
+  if (isSyncing) return;
+  isSyncing = true;
+  updateSyncIndicator('syncing', 'Syncing shop board...');
+
+  try {
+    if (syncConfig.mode === 'gist') {
+      await syncViaGist(pushChanges);
+    } else if (syncConfig.mode === 'github') {
+      await syncViaGitHub(pushChanges);
+    } else if (syncConfig.mode === 'firebase') {
+      await syncViaFirebase(pushChanges);
+    }
+    const nowTime = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    updateSyncIndicator('connected', `Live sync active • Checked ${nowTime}`);
+  } catch (err) {
+    updateSyncIndicator('error', `Sync error: ${err.message || 'Check connection or settings'}`);
+  } finally {
+    isSyncing = false;
+  }
+}
+
+async function syncViaGist(pushChanges) {
+  const token = (syncConfig.gistToken || '').trim();
+  let gistId = (syncConfig.gistId || '').trim();
+  if (!token) throw new Error('Missing GitHub token');
+
+  const headers = {
+    'Authorization': `Bearer ${token}`,
+    'Accept': 'application/vnd.github+json'
+  };
+
+  try {
+    if (!gistId) {
+      const createPayload = {
+        description: 'WB Fab Live Job Board Sync Data',
+        public: false,
+        files: {
+          'wb-fab-orders.json': {
+            content: JSON.stringify({ updatedAt: Date.now(), orders: orders, deletedMap: deletedMap }, null, 2)
+          }
+        }
+      };
+      const createRes = await fetch('https://api.github.com/gists', {
+        method: 'POST',
+        headers: Object.assign({ 'Content-Type': 'application/json' }, headers),
+        body: JSON.stringify(createPayload)
+      });
+      if (!createRes.ok) throw new Error(`Gist create status ${createRes.status}`);
+      const created = await createRes.json();
+      syncConfig.gistId = created.id;
+      safeSetStorage(SYNC_CFG_KEY, JSON.stringify(syncConfig));
+      const gistInput = document.getElementById('s-gist-id');
+      if (gistInput) gistInput.value = created.id;
+      toast('Created secret GitHub Gist for shop sync!');
+      return;
+    }
+
+    const getRes = await fetch(`https://api.github.com/gists/${encodeURIComponent(gistId)}?_=${Date.now()}`, { headers });
+    if (!getRes.ok) throw new Error(`Gist status ${getRes.status}`);
+    const gistData = await getRes.json();
+    const fileObj = gistData.files && gistData.files['wb-fab-orders.json'];
+    if (fileObj && fileObj.content) {
+      const parsed = JSON.parse(fileObj.content);
+      mergeRemoteState(parsed.orders || [], parsed.deletedMap || {});
+    } else {
+      pushChanges = true;
+    }
+
+    if (pushChanges) {
+      const patchRes = await fetch(`https://api.github.com/gists/${encodeURIComponent(gistId)}`, {
+        method: 'PATCH',
+        headers: Object.assign({ 'Content-Type': 'application/json' }, headers),
+        body: JSON.stringify({
+          files: {
+            'wb-fab-orders.json': {
+              content: JSON.stringify({ updatedAt: Date.now(), orders: orders, deletedMap: deletedMap }, null, 2)
+            }
+          }
+        })
+      });
+      if (!patchRes.ok) throw new Error(`Gist save status ${patchRes.status}`);
+    }
+  } catch (e) {
+    throw e;
+  }
+}
+
+async function ensureGitHubBranch(repo, branch, headers) {
+  if (branch === 'main' || branch === 'master') return;
+  try {
+    const checkRes = await fetch(`https://api.github.com/repos/${repo}/git/ref/heads/${encodeURIComponent(branch)}`, { headers });
+    if (checkRes.status === 200) return;
+    const mainRes = await fetch(`https://api.github.com/repos/${repo}/git/ref/heads/main`, { headers });
+    if (!mainRes.ok) return;
+    const mainData = await mainRes.json();
+    const sha = mainData && mainData.object && mainData.object.sha;
+    if (!sha) return;
+    await fetch(`https://api.github.com/repos/${repo}/git/refs`, {
+      method: 'POST',
+      headers: Object.assign({ 'Content-Type': 'application/json' }, headers),
+      body: JSON.stringify({ ref: `refs/heads/${branch}`, sha: sha })
+    });
+  } catch (e) {}
+}
+
+async function syncViaGitHub(pushChanges) {
+  const repo = (syncConfig.ghRepo || '').trim().replace(/^https?:\/\/github\.com\//i, '').replace(/\/+$/, '');
+  const token = (syncConfig.ghToken || '').trim();
+  const branch = (syncConfig.ghBranch || 'shop-data').trim() || 'shop-data';
+  if (!repo || !token) throw new Error('Missing GitHub repo or token');
+
+  const headers = {
+    'Authorization': `Bearer ${token}`,
+    'Accept': 'application/vnd.github+json'
+  };
+
+  try {
+    await ensureGitHubBranch(repo, branch, headers);
+    const getRes = await fetch(`https://api.github.com/repos/${repo}/contents/wb-fab-orders.json?ref=${encodeURIComponent(branch)}&_=${Date.now()}`, { headers });
+    if (getRes.status === 200) {
+      const fileJson = await getRes.json();
+      ghFileSha = fileJson.sha;
+      const rawContent = decodeURIComponent(escape(atob((fileJson.content || '').replace(/\s/g, ''))));
+      const parsed = JSON.parse(rawContent);
+      mergeRemoteState(parsed.orders || [], parsed.deletedMap || {});
+    } else if (getRes.status === 404) {
+      ghFileSha = null;
+      pushChanges = true;
+    } else {
+      throw new Error(`GitHub status ${getRes.status}`);
+    }
+
+    if (pushChanges) {
+      const payloadStr = JSON.stringify({
+        updatedAt: Date.now(),
+        orders: orders,
+        deletedMap: deletedMap
+      }, null, 2);
+      const encodedContent = btoa(unescape(encodeURIComponent(payloadStr)));
+      const bodyObj = {
+        message: `WB Fab job board update by ${currentWho}`,
+        content: encodedContent,
+        branch: branch
+      };
+      if (ghFileSha) bodyObj.sha = ghFileSha;
+
+      const putRes = await fetch(`https://api.github.com/repos/${repo}/contents/wb-fab-orders.json`, {
+        method: 'PUT',
+        headers: Object.assign({ 'Content-Type': 'application/json' }, headers),
+        body: JSON.stringify(bodyObj)
+      });
+      if (!putRes.ok) {
+        throw new Error(`GitHub save status ${putRes.status}`);
+      }
+      const putData = await putRes.json();
+      if (putData && putData.content && putData.content.sha) {
+        ghFileSha = putData.content.sha;
+      }
+    }
+  } catch (e) {
+    throw e;
+  }
+}
+
+async function syncViaFirebase(pushChanges) {
+  const cleanHost = (syncConfig.fbUrl || '').trim().replace(/^https?:\/\//i, '').replace(/\/+$/, '');
+  if (!cleanHost) throw new Error('Missing Firebase URL');
+
+  try {
+    const getRes = await fetch(`https://${cleanHost}/wbfab_board.json?_=${Date.now()}`);
+    if (!getRes.ok) throw new Error(`Firebase status ${getRes.status}`);
+    const remoteData = await getRes.json();
+    if (remoteData) {
+      mergeRemoteState(remoteData.orders || [], remoteData.deletedMap || {});
+    } else {
+      pushChanges = true;
+    }
+
+    if (pushChanges) {
+      const putRes = await fetch(`https://${cleanHost}/wbfab_board.json`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          updatedAt: Date.now(),
+          orders: orders,
+          deletedMap: deletedMap
+        })
+      });
+      if (!putRes.ok) throw new Error(`Firebase save status ${putRes.status}`);
+    }
+  } catch (e) {
+    throw e;
+  }
+}
+
+function manualSync() {
+  if (syncConfig.mode === 'none') {
+    openSyncSheet();
+    return;
+  }
+  syncWithCloud(true);
+}
+
+function startPolling() {
+  if (pollTimer) clearInterval(pollTimer);
+  pollTimer = setInterval(() => {
+    if (syncConfig.mode !== 'none' && !document.hidden) {
+      syncWithCloud(false);
+    }
+  }, 8000);
+}
+
+function matchesFilters(o) {
+  if (ownerFilter !== 'all' && o.assignee !== ownerFilter && o.assignee !== 'Both') {
+    return false;
+  }
+  if (searchQuery) {
+    const hay = `${o.name || ''} ${o.customer || ''} ${o.steel || ''} ${o.notes || ''} ${o.assignee || ''}`.toLowerCase();
+    if (!hay.includes(searchQuery)) return false;
+  }
+  return true;
+}
+
+function updateKpis() {
+  let pipelineAmt = 0;
+  let paidAmt = 0;
+  let completedCnt = 0;
+  let archivedCnt = 0;
+
+  orders.forEach(o => {
+    const price = parseFloat(o.price) || 0;
+    const qty = parseInt(o.qty, 10) || 1;
+    const total = price * (o.pricePerUnit ? qty : 1);
+    if (!o.archived && o.status !== 'done') {
+      pipelineAmt += total;
+    }
+    if (o.payStatus === 'paid') {
+      paidAmt += total;
+    } else if (o.payStatus === 'deposit') {
+      paidAmt += Math.round(total * 0.5);
+    }
+    if (o.status === 'done' || o.archived) {
+      completedCnt++;
+    }
+    if (o.archived) {
+      archivedCnt++;
+    }
+  });
+
+  const pEl = document.getElementById('kpi-pipeline');
+  const cEl = document.getElementById('kpi-paid');
+  const dEl = document.getElementById('kpi-completed');
+  const aEl = document.getElementById('cnt-archive');
+  if (pEl) pEl.textContent = '$' + pipelineAmt.toLocaleString();
+  if (cEl) cEl.textContent = '$' + paidAmt.toLocaleString();
+  if (dEl) dEl.textContent = String(completedCnt);
+  if (aEl) aEl.textContent = String(archivedCnt);
+}
+
+function render() {
+  updateKpis();
+  const cols = { todo: [], wip: [], done: [] };
+  const archList = [];
+
+  orders
+    .slice()
+    .sort((a, b) => (a.due || '9999').localeCompare(b.due || '9999'))
+    .forEach(o => {
+      if (!matchesFilters(o)) return;
+      if (o.archived) {
+        archList.push(o);
+      } else {
+        cols[o.status || 'todo'].push(o);
+      }
+    });
+
+  for (const key of ['todo', 'wip', 'done']) {
+    const el = document.getElementById('col-' + key);
+    const cnt = document.getElementById('cnt-' + key);
+    if (cnt) cnt.textContent = String(cols[key].length);
+    if (!el) continue;
+    if (cols[key].length === 0) {
+      el.innerHTML = '<div class="empty">No jobs here</div>';
+      continue;
+    }
+    el.innerHTML = cols[key].map(o => cardHtml(o)).join('');
+  }
+
+  const archEl = document.getElementById('col-archive');
+  if (archEl) {
+    if (archList.length === 0) {
+      archEl.innerHTML = '<div class="empty">No archived jobs matching filter</div>';
+    } else {
+      archEl.innerHTML = archList.map(o => cardHtml(o)).join('');
+    }
+  }
+}
+
+function cardHtml(o) {
+  const late = o.due && o.status !== 'done' && !o.archived && o.due < todayStr();
+  const imgSrc = o.imgData || '';
+  const img = imgSrc ? `<img src="${imgSrc}" alt="Job sketch">` : 'No photo';
+
+  const ownerClass = o.assignee === 'Dylan' ? 'dylan' : (o.assignee === 'Jacob' ? 'jacob' : '');
+  const ownerLabel = o.assignee === 'Both' ? '👥 BOTH' : `👤 ${esc((o.assignee || 'Both').toUpperCase())}`;
+
+  const payState = o.payStatus || 'unpaid';
+  const payLabel = payState === 'paid' ? 'PAID' : (payState === 'deposit' ? 'DEPOSIT' : 'UNPAID');
+  const priceDisplay = o.price ? `$${Number(o.price).toLocaleString()}` : '';
+
+  const steps = o.steps || defaultSteps();
+  const stepsHtml = STEP_KEYS.map(s => {
+    const isDone = Boolean(steps[s.key]);
+    return `<div class="step-chip ${isDone ? 'done' : ''}" onclick="toggleStep('${esc(o.id)}','${s.key}')">${isDone ? '✓ ' : ''}${s.label}</div>`;
+  }).join('');
+
+  let contactHtml = '';
+  if (o.phone) {
+    const cleanPhone = String(o.phone).replace(/[^\d+]/g, '');
+    const smsBody = encodeURIComponent(
+      o.status === 'done'
+        ? `Hey ${o.customer || 'there'}, this is WB Fab! Your "${o.name}" order is finished and ready for pickup.`
+        : `Hey ${o.customer || 'there'}, this is WB Fab checking in on your "${o.name}" order.`
+    );
+    contactHtml = `<div class="contact-row">
+      <a class="contact-btn ${o.status === 'done' ? 'ready' : ''}" href="sms:${esc(cleanPhone)}?body=${smsBody}">💬 ${o.status === 'done' ? 'TEXT READY FOR PICKUP' : 'TEXT CUSTOMER'}</a>
+      <a class="contact-btn" href="tel:${esc(cleanPhone)}">📞 ${esc(o.phone)}</a>
+    </div>`;
+  }
+
+  return `<div class="card pr-${esc(o.status || 'todo')}">
+    <div class="thumb" ${imgSrc ? `onclick="viewImg('${esc(o.id)}')"` : ''}>${img}</div>
+    <div class="cinfo">
+      <div class="crow1">
+        <div class="cname">${esc(o.name || 'Untitled')}</div>
+        <div class="badges-right">
+          <span class="owner-badge ${ownerClass}" title="Tap to switch assignee" onclick="cycleAssignee('${esc(o.id)}')">${ownerLabel}</span>
+          <div class="prio ${o.priority === 'high' ? 'high' : 'norm'}">${o.priority === 'high' ? 'RUSH' : 'NORMAL'}</div>
+        </div>
+      </div>
+      <div class="cust-row">
+        <div class="cust">${esc(o.customer || 'Walk-in / Shop')}</div>
+        <div class="price-pay">
+          ${priceDisplay ? `<span class="price-tag">${esc(priceDisplay)}</span>` : ''}
+          <span class="pay-badge ${esc(payState)}" title="Tap to cycle payment status" onclick="cyclePayStatus('${esc(o.id)}')">${payLabel}</span>
+        </div>
+      </div>
+      <div class="cmeta">
+        ${o.dims ? `<span><b>Dim:</b> ${esc(o.dims)}</span>` : ''}
+        ${o.steel ? `<span><b>Steel:</b> ${esc(o.steel)}</span>` : ''}
+        ${o.qty ? `<span><b>Qty:</b> ${esc(o.qty)}</span>` : ''}
+      </div>
+      ${o.notes ? `<div class="cmeta"><span>⚠ <b>Notes:</b> ${esc(o.notes)}</span></div>` : ''}
+      <div class="steps-row">${stepsHtml}</div>
+      ${contactHtml}
+      ${o.due ? `<div class="due ${late ? 'late' : ''}">${late ? '⚠ OVERDUE ' : 'DUE '}${fmtDate(o.due)}</div>` : ''}
+      <div class="byline">
+        <span>Updated by ${esc(o.updatedBy || 'Shop')}</span>
+      </div>
+      <div class="actions">
+        <button class="${!o.archived && o.status === 'todo' ? 'active' : ''}" onclick="setStatus('${esc(o.id)}','todo')">TO DO</button>
+        <button class="${!o.archived && o.status === 'wip' ? 'active' : ''}" onclick="setStatus('${esc(o.id)}','wip')">WIP</button>
+        <button class="${!o.archived && o.status === 'done' ? 'active' : ''}" onclick="setStatus('${esc(o.id)}','done')">DONE</button>
+        <button class="arch" title="${o.archived ? 'Restore to board' : 'Archive order'}" onclick="toggleOrderArchive('${esc(o.id)}')">${o.archived ? '↩' : '📦'}</button>
+        <button onclick="editOrder('${esc(o.id)}')">✎</button>
+        <button class="del" onclick="delOrder('${esc(o.id)}')">✕</button>
+      </div>
+    </div>
+  </div>`;
+}
+
+function esc(s) {
+  return String(s).replace(/[&<>"']/g, c => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+  }[c]));
+}
+
+function todayStr() {
+  return new Date().toISOString().slice(0, 10);
+}
+
+function fmtDate(d) {
+  const dt = new Date(d + 'T00:00');
+  return dt.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+}
+
+async function toggleStep(id, stepKey) {
+  const o = orders.find(x => x.id === id);
+  if (!o) return;
+  if (!o.steps) o.steps = defaultSteps();
+  o.steps[stepKey] = !o.steps[stepKey];
+
+  const allDone = STEP_KEYS.every(k => o.steps[k.key]);
+  const anyDone = STEP_KEYS.some(k => o.steps[k.key]);
+  if (allDone && o.status !== 'done') {
+    o.status = 'done';
+    toast(`All fabrication steps complete — "${o.name}" moved to DONE!`);
+  } else if (anyDone && o.status === 'todo') {
+    o.status = 'wip';
+    toast(`Started "${o.name}" — moved to IN PROGRESS`);
+  }
+
+  o.updatedBy = currentWho;
+  o.updatedAt = Date.now();
+  prevState = recordStateSnapshot(orders);
+  saveLocalOrders();
+  render();
+  await syncWithCloud(true);
+}
+
+async function cyclePayStatus(id) {
+  const o = orders.find(x => x.id === id);
+  if (!o) return;
+  const orderSeq = ['unpaid', 'deposit', 'paid'];
+  const nextIdx = (orderSeq.indexOf(o.payStatus || 'unpaid') + 1) % orderSeq.length;
+  o.payStatus = orderSeq[nextIdx];
+  o.updatedBy = currentWho;
+  o.updatedAt = Date.now();
+  saveLocalOrders();
+  render();
+  toast(`Payment for "${o.name}" set to ${o.payStatus.toUpperCase()}`);
+  await syncWithCloud(true);
+}
+
+async function cycleAssignee(id) {
+  const o = orders.find(x => x.id === id);
+  if (!o) return;
+  const seq = ['Both', 'Dylan', 'Jacob'];
+  const nextIdx = (seq.indexOf(o.assignee || 'Both') + 1) % seq.length;
+  o.assignee = seq[nextIdx];
+  o.updatedBy = currentWho;
+  o.updatedAt = Date.now();
+  saveLocalOrders();
+  render();
+  toast(`Assigned "${o.name}" to ${o.assignee}`);
+  await syncWithCloud(true);
+}
+
+async function toggleOrderArchive(id) {
+  const o = orders.find(x => x.id === id);
+  if (!o) return;
+  o.archived = !o.archived;
+  o.updatedBy = currentWho;
+  o.updatedAt = Date.now();
+  prevState = recordStateSnapshot(orders);
+  saveLocalOrders();
+  render();
+  toast(o.archived ? `Archived "${o.name}"` : `Restored "${o.name}" to active board`);
+  await syncWithCloud(true);
+}
+
+async function archiveCompletedOrders() {
+  const doneActive = orders.filter(o => !o.archived && o.status === 'done');
+  if (doneActive.length === 0) {
+    toast('No finished orders in DONE to archive.');
+    return;
+  }
+  const now = Date.now();
+  doneActive.forEach(o => {
+    o.archived = true;
+    o.updatedBy = currentWho;
+    o.updatedAt = now;
+  });
+  prevState = recordStateSnapshot(orders);
+  saveLocalOrders();
+  render();
+  toast(`Archived ${doneActive.length} completed job(s).`);
+  await syncWithCloud(true);
+}
+
+async function setStatus(id, status) {
+  const o = orders.find(x => x.id === id);
+  if (!o) return;
+  o.archived = false;
+  o.status = status;
+  if (status === 'done') {
+    o.steps = defaultSteps(true, true, true, true);
+  }
+  o.updatedBy = currentWho;
+  o.updatedAt = Date.now();
+  prevState = recordStateSnapshot(orders);
+  saveLocalOrders();
+  render();
+  const label = status === 'wip' ? 'In Progress' : status === 'done' ? 'Done' : 'To Do';
+  toast(`Moved "${o.name}" to ${label}`);
+  await syncWithCloud(true);
+}
+
+function delOrder(id) {
+  const o = orders.find(x => x.id === id);
+  if (!o) return;
+  pendingDeleteId = id;
+  const txt = document.getElementById('delOrderText');
+  if (txt) txt.textContent = `Delete "${o.name || 'Untitled'}" from the job board?`;
+  document.getElementById('delOverlay').classList.add('show');
+}
+
+function closeDelModal() {
+  pendingDeleteId = null;
+  document.getElementById('delOverlay').classList.remove('show');
+}
+
+async function confirmDeleteOrder() {
+  if (!pendingDeleteId) return;
+  const id = pendingDeleteId;
+  orders = orders.filter(x => x.id !== id);
+  deletedMap[id] = Date.now();
+  prevState = recordStateSnapshot(orders);
+  saveLocalOrders();
+  closeDelModal();
+  render();
+  toast('Order removed.');
+  await syncWithCloud(true);
+}
+
+function renderImgPickPrompt() {
+  const pick = document.getElementById('imgpick');
+  const clearBtn = document.getElementById('clearImgBtn');
+  if (!pick) return;
+  if (pendingImgData) {
+    pick.innerHTML = `<img src="${pendingImgData}" alt="Preview"><small>Tap to replace photo or edit sketch</small>`;
+    if (clearBtn) clearBtn.classList.add('show');
+  } else {
+    pick.innerHTML = `📷 Tap to add photo or sketch<small>Upload from Phone/PC, paste image, or draw a shop sketch</small>`;
+    if (clearBtn) clearBtn.classList.remove('show');
+  }
+}
+
+function openPhotoStudio() {
+  // First attempt native file picker synchronously in the tap gesture
+  triggerNativeFileInput(false);
+  // Also open the Photo & Sketch Studio modal so the user always sees a working upload/sketch screen
+  document.getElementById('f-img-url').value = '';
+  document.getElementById('photoOverlay').classList.add('show');
+  initSketchPad();
+}
+
+function closePhotoStudio() {
+  document.getElementById('photoOverlay').classList.remove('show');
+}
+
+function triggerNativeFileInput(useCamera) {
+  try {
+    const el = document.getElementById(useCamera ? 'f-img-cam' : 'f-img');
+    if (!el) return;
+    if (typeof el.showPicker === 'function') {
+      el.showPicker();
+    } else {
+      el.click();
+    }
+  } catch (e) {
+    try {
+      const fallbackEl = document.getElementById('f-img');
+      if (fallbackEl) fallbackEl.click();
+    } catch (err) {}
+  }
+}
+
+function applyImageUrlInput() {
+  const val = (document.getElementById('f-img-url').value || '').trim();
+  if (!val) {
+    toast('Paste an image link or data URL first.');
+    return;
+  }
+  pendingImgData = val;
+  renderImgPickPrompt();
+  closePhotoStudio();
+  toast('Image link attached!');
+}
+
+function initSketchPad() {
+  const canvas = document.getElementById('sketchCanvas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  if (!canvas.dataset.initialized) {
+    canvas.dataset.initialized = '1';
+    clearSketchPad();
+
+    const getPos = e => {
+      const rect = canvas.getBoundingClientRect();
+      const touch = (e.touches && e.touches[0]) || (e.changedTouches && e.changedTouches[0]);
+      const clientX = touch ? touch.clientX : e.clientX;
+      const clientY = touch ? touch.clientY : e.clientY;
+      return {
+        x: ((clientX - rect.left) / rect.width) * canvas.width,
+        y: ((clientY - rect.top) / rect.height) * canvas.height
+      };
+    };
+
+    const startDraw = e => {
+      e.preventDefault();
+      isDrawingSketch = true;
+      lastSketchPt = getPos(e);
+    };
+
+    const moveDraw = e => {
+      if (!isDrawingSketch || !lastSketchPt) return;
+      e.preventDefault();
+      const pt = getPos(e);
+      ctx.strokeStyle = sketchColor;
+      ctx.lineWidth = 3;
+      ctx.lineCap = 'round';
+      ctx.beginPath();
+      ctx.moveTo(lastSketchPt.x, lastSketchPt.y);
+      ctx.lineTo(pt.x, pt.y);
+      ctx.stroke();
+      lastSketchPt = pt;
+    };
+
+    const endDraw = () => {
+      isDrawingSketch = false;
+      lastSketchPt = null;
+    };
+
+    canvas.addEventListener('mousedown', startDraw);
+    canvas.addEventListener('mousemove', moveDraw);
+    window.addEventListener('mouseup', endDraw);
+    canvas.addEventListener('touchstart', startDraw, { passive: false });
+    canvas.addEventListener('touchmove', moveDraw, { passive: false });
+    canvas.addEventListener('touchend', endDraw);
+  }
+}
+
+function setSketchColor(color, btnId) {
+  sketchColor = color;
+  ['penAmber', 'penCyan', 'penWhite'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.classList.toggle('active', id === btnId);
+  });
+}
+
+function clearSketchPad() {
+  const canvas = document.getElementById('sketchCanvas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  ctx.fillStyle = '#0c0d0f';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  // Subtle blueprint grid
+  ctx.strokeStyle = '#1c2026';
+  ctx.lineWidth = 1;
+  for (let x = 24; x < canvas.width; x += 24) {
+    ctx.beginPath();
+    ctx.moveTo(x, 0);
+    ctx.lineTo(x, canvas.height);
+    ctx.stroke();
+  }
+  for (let y = 24; y < canvas.height; y += 24) {
+    ctx.beginPath();
+    ctx.moveTo(0, y);
+    ctx.lineTo(canvas.width, y);
+    ctx.stroke();
+  }
+}
+
+function drawBracketTemplate() {
+  clearSketchPad();
+  const canvas = document.getElementById('sketchCanvas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  ctx.strokeStyle = '#e8ebef';
+  ctx.lineWidth = 2.5;
+  ctx.strokeRect(110, 40, 260, 140);
+  // 4 mounting holes
+  ctx.strokeStyle = '#ff8a1e';
+  [[135, 65], [345, 65], [135, 155], [345, 155]].forEach(([cx, cy]) => {
+    ctx.beginPath();
+    ctx.arc(cx, cy, 10, 0, Math.PI * 2);
+    ctx.stroke();
+  });
+  ctx.fillStyle = '#3ff0e0';
+  ctx.font = 'bold 13px Orbitron, sans-serif';
+  const w = document.getElementById('f-width').value || 'W';
+  const h = document.getElementById('f-height').value || 'H';
+  const u = document.getElementById('f-unit').value || 'in';
+  ctx.fillText(`${w} x ${h} ${u}`, 195, 28);
+}
+
+function saveSketchAsPhoto() {
+  const canvas = document.getElementById('sketchCanvas');
+  if (!canvas) return;
+  pendingImgData = canvas.toDataURL('image/jpeg', 0.85);
+  renderImgPickPrompt();
+  closePhotoStudio();
+  toast('Shop sketch attached to order!');
+}
+
+function openSheet() {
+  editId = null;
+  pendingImgData = null;
+  document.getElementById('sheetTitle').textContent = 'NEW ORDER';
+  ['f-name', 'f-customer', 'f-phone', 'f-price', 'f-width', 'f-height', 'f-steel', 'f-notes', 'f-due'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = '';
+  });
+  document.getElementById('f-pay').value = 'unpaid';
+  document.getElementById('f-assignee').value = 'Both';
+  document.getElementById('f-unit').value = 'in';
+  document.getElementById('f-qty').value = 1;
+  document.getElementById('f-prio').value = 'norm';
+  const fileIn = document.getElementById('f-img');
+  if (fileIn) fileIn.value = '';
+  renderImgPickPrompt();
+  document.getElementById('overlay').classList.add('show');
+}
+
+function closeSheet() {
+  document.getElementById('overlay').classList.remove('show');
+}
+
+function editOrder(id) {
+  const o = orders.find(x => x.id === id);
+  if (!o) return;
+  editId = id;
+  pendingImgData = o.imgData || null;
+  document.getElementById('sheetTitle').textContent = 'EDIT ORDER';
+  document.getElementById('f-name').value = o.name || '';
+  document.getElementById('f-customer').value = o.customer || '';
+  document.getElementById('f-phone').value = o.phone || '';
+  document.getElementById('f-price').value = o.price || '';
+  document.getElementById('f-pay').value = o.payStatus || 'unpaid';
+  document.getElementById('f-assignee').value = o.assignee || 'Both';
+  document.getElementById('f-width').value = o.width || '';
+  document.getElementById('f-height').value = o.height || '';
+  document.getElementById('f-unit').value = o.unit || 'in';
+  document.getElementById('f-steel').value = o.steel || '';
+  document.getElementById('f-qty').value = o.qty || 1;
+  document.getElementById('f-due').value = o.due || '';
+  document.getElementById('f-prio').value = o.priority || 'norm';
+  document.getElementById('f-notes').value = o.notes || '';
+  const fileIn = document.getElementById('f-img');
+  if (fileIn) fileIn.value = '';
+  renderImgPickPrompt();
+  document.getElementById('overlay').classList.add('show');
+}
+
+function clearPickedImage() {
+  pendingImgData = null;
+  const fileIn = document.getElementById('f-img');
+  if (fileIn) fileIn.value = '';
+  renderImgPickPrompt();
+}
+
+function compressImageFile(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = e => {
+      const rawDataUrl = e.target.result;
+      const img = new Image();
+      img.onload = () => {
+        try {
+          const maxDim = 720;
+          let w = img.width || 600;
+          let h = img.height || 600;
+          if (w > maxDim || h > maxDim) {
+            if (w > h) {
+              h = Math.round((h * maxDim) / w);
+              w = maxDim;
+            } else {
+              w = Math.round((w * maxDim) / h);
+              h = maxDim;
+            }
+          }
+          const canvas = document.createElement('canvas');
+          canvas.width = w;
+          canvas.height = h;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0, w, h);
+          resolve(canvas.toDataURL('image/jpeg', 0.78));
+        } catch (err) {
+          resolve(rawDataUrl);
+        }
+      };
+      img.onerror = () => resolve(rawDataUrl);
+      img.src = rawDataUrl;
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
+async function handleSelectedImageFile(file) {
+  if (!file) return;
+  const pick = document.getElementById('imgpick');
+  if (pick) pick.textContent = 'Processing photo...';
+  try {
+    pendingImgData = await compressImageFile(file);
+    renderImgPickPrompt();
+    closePhotoStudio();
+    toast('Photo attached!');
+  } catch (err) {
+    renderImgPickPrompt();
+    toast('Could not read that image file.');
+  }
+}
+
+document.getElementById('f-img').addEventListener('change', async e => {
+  const file = e.target.files && e.target.files[0];
+  if (!file) return;
+  await handleSelectedImageFile(file);
+});
+
+document.getElementById('f-img-cam').addEventListener('change', async e => {
+  const file = e.target.files && e.target.files[0];
+  if (!file) return;
+  await handleSelectedImageFile(file);
+  e.target.value = '';
+});
+
+// Support pasting an image or screenshot when the order sheet is open
+document.addEventListener('paste', async e => {
+  const overlay = document.getElementById('overlay');
+  if (!overlay || !overlay.classList.contains('show')) return;
+  const items = e.clipboardData && e.clipboardData.items;
+  if (!items) return;
+  for (let i = 0; i < items.length; i++) {
+    if (items[i].type && items[i].type.startsWith('image/')) {
+      const file = items[i].getAsFile();
+      if (file) {
+        await handleSelectedImageFile(file);
+        break;
+      }
+    }
+  }
+});
+
+function viewImg(orderId) {
+  const o = orders.find(x => x.id === orderId);
+  if (!o || !o.imgData) return;
+  document.getElementById('imgviewImg').src = o.imgData;
+  document.getElementById('imgview').classList.add('show');
+}
+
+async function saveOrder() {
+  const name = document.getElementById('f-name').value.trim();
+  if (!name) {
+    toast('Please enter a project or sign name.');
+    document.getElementById('f-name').focus();
+    return;
+  }
+  const width = document.getElementById('f-width').value.trim();
+  const height = document.getElementById('f-height').value.trim();
+  const unit = document.getElementById('f-unit').value;
+  const dims = (width && height)
+    ? `${width} x ${height} ${unit}`
+    : (width ? `${width} ${unit}` : (height ? `${height} ${unit}` : ''));
+
+  const payload = {
+    name: name,
+    customer: document.getElementById('f-customer').value.trim(),
+    phone: document.getElementById('f-phone').value.trim(),
+    price: document.getElementById('f-price').value.trim(),
+    payStatus: document.getElementById('f-pay').value,
+    assignee: document.getElementById('f-assignee').value,
+    width: width,
+    height: height,
+    unit: unit,
+    dims: dims,
+    steel: document.getElementById('f-steel').value.trim(),
+    qty: document.getElementById('f-qty').value,
+    due: document.getElementById('f-due').value,
+    priority: document.getElementById('f-prio').value,
+    notes: document.getElementById('f-notes').value.trim(),
+    imgData: pendingImgData,
+    updatedBy: currentWho,
+    updatedAt: Date.now()
+  };
+
+  if (editId) {
+    const idx = orders.findIndex(x => x.id === editId);
+    if (idx !== -1) {
+      orders[idx] = normalizeOrder(Object.assign({}, orders[idx], payload));
+    }
+    toast(`Updated "${name}"`);
+  } else {
+    payload.id = 'job-' + Date.now() + '-' + Math.random().toString(36).slice(2, 6);
+    payload.status = 'todo';
+    payload.archived = false;
+    payload.steps = defaultSteps();
+    orders.push(normalizeOrder(payload));
+    toast(`Added "${name}" to To Do`);
+  }
+
+  prevState = recordStateSnapshot(orders);
+  saveLocalOrders();
+  closeSheet();
+  render();
+  await syncWithCloud(true);
+}
+
+function openSyncSheet() {
+  const mode = (syncConfig.mode === 'github' || syncConfig.mode === 'firebase') ? syncConfig.mode : 'gist';
+  switchSyncTab(mode);
+  document.getElementById('s-gist-token').value = syncConfig.gistToken || '';
+  document.getElementById('s-gist-id').value = syncConfig.gistId || '';
+  document.getElementById('s-gh-repo').value = syncConfig.ghRepo || '';
+  document.getElementById('s-gh-token').value = syncConfig.ghToken || '';
+  document.getElementById('s-gh-branch').value = syncConfig.ghBranch || 'shop-data';
+  document.getElementById('s-fb-url').value = syncConfig.fbUrl || '';
+  document.getElementById('syncOverlay').classList.add('show');
+}
+
+function closeSyncSheet() {
+  document.getElementById('syncOverlay').classList.remove('show');
+}
+
+function switchSyncTab(tab) {
+  syncTab = tab;
+  ['gist', 'github', 'firebase'].forEach(k => {
+    const t = document.getElementById('tab-' + k);
+    const p = document.getElementById('panel-' + k);
+    if (t) t.classList.toggle('active', k === tab);
+    if (p) p.style.display = k === tab ? 'block' : 'none';
+  });
+}
+
+function buildConfigFromInputs() {
+  const base = Object.assign({}, syncConfig);
+  base.gistToken = document.getElementById('s-gist-token').value.trim();
+  base.gistId = document.getElementById('s-gist-id').value.trim();
+  base.ghRepo = document.getElementById('s-gh-repo').value.trim();
+  base.ghToken = document.getElementById('s-gh-token').value.trim();
+  base.ghBranch = document.getElementById('s-gh-branch').value.trim() || 'shop-data';
+  base.fbUrl = document.getElementById('s-fb-url').value.trim();
+  base.mode = syncTab;
+  return base;
+}
+
+async function saveSyncSettings() {
+  const next = buildConfigFromInputs();
+  if (next.mode === 'gist' && !next.gistToken) {
+    toast('Enter your GitHub Personal Access Token (with Gist permission).');
+    return;
+  }
+  if (next.mode === 'github' && (!next.ghRepo || !next.ghToken)) {
+    toast('Enter both your GitHub repo (e.g. dricker16/wb-fab) and token.');
+    return;
+  }
+  if (next.mode === 'firebase' && !next.fbUrl) {
+    toast('Enter your Firebase Realtime Database URL.');
+    return;
+  }
+  syncConfig = next;
+  safeSetStorage(SYNC_CFG_KEY, JSON.stringify(syncConfig));
+  closeSyncSheet();
+  toast('Connecting to live sync...');
+  await syncWithCloud(true);
+}
+
+function disconnectSync() {
+  syncConfig.mode = 'none';
+  safeSetStorage(SYNC_CFG_KEY, JSON.stringify(syncConfig));
+  updateSyncIndicator('none', 'Local mode — tap Setup Sync to link devices');
+  closeSyncSheet();
+  toast('Switched to local-only mode.');
+}
+
+async function copyInviteLink() {
+  const cfg = buildConfigFromInputs();
+  if (cfg.mode === 'gist' && (!cfg.gistToken || !cfg.gistId)) {
+    toast('Click "Save & Connect" once first so your Secret Gist ID is generated!');
+    return;
+  }
+  if (cfg.mode === 'github' && (!cfg.ghRepo || !cfg.ghToken)) {
+    toast('Fill in your GitHub repo and token first.');
+    return;
+  }
+  if (cfg.mode === 'firebase' && !cfg.fbUrl) {
+    toast('Fill in your Firebase URL first.');
+    return;
+  }
+  const encoded = encodeURIComponent(btoa(JSON.stringify(cfg)));
+  const baseUrl = window.location.href.split('#')[0];
+  const inviteUrl = `${baseUrl}#sync=${encoded}`;
+
+  try {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      await navigator.clipboard.writeText(inviteUrl);
+    } else {
+      throw new Error('Fallback copy');
+    }
+    toast('Invite link copied! Text it to Jacob.');
+  } catch (e) {
+    const ta = document.createElement('textarea');
+    ta.value = inviteUrl;
+    document.body.appendChild(ta);
+    ta.select();
+    try { document.execCommand('copy'); toast('Invite link copied! Text it to Jacob.'); } catch (err) {}
+    ta.remove();
+  }
+}
+
+function init() {
+  loadLocalData();
+  checkUrlInviteHash();
+  updateBell();
+  prevState = recordStateSnapshot(orders);
+  render();
+
+  if (syncConfig.mode !== 'none') {
+    syncWithCloud(false);
+  } else {
+    updateSyncIndicator('none', 'Local mode — tap Setup Sync to link devices');
+  }
+
+  startPolling();
+  document.addEventListener('visibilitychange', () => {
+    if (!document.hidden && syncConfig.mode !== 'none') {
+      syncWithCloud(false);
+    }
+  });
+}
+
+init();
+</script>
+</body>
+</html>
