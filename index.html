@@ -209,22 +209,35 @@ main{
   display:grid; grid-template-columns:repeat(4, 1fr); gap:4px; margin-top:8px;
 }
 .step-chip{
-  font-family:'Orbitron'; font-size:9px; padding:4px 2px; border-radius:4px;
+  font-family:'Orbitron'; font-size:9px; padding:5px 2px; border-radius:4px;
   border:1px solid var(--line); background:#101215; color:var(--text-dim);
-  text-align:center; cursor:pointer; user-select:none;
+  text-align:center; cursor:pointer; user-select:none; transition:all 0.15s;
 }
 .step-chip.done{
   background:rgba(63,240,140,0.14); border-color:#26784b; color:var(--done); font-weight:700;
 }
-
-.contact-row{display:flex; gap:6px; margin-top:7px; flex-wrap:wrap;}
-.contact-btn{
-  display:inline-flex; align-items:center; gap:4px; padding:4px 8px; border-radius:5px;
-  font-family:'Orbitron'; font-size:9px; text-decoration:none;
-  background:rgba(63,240,224,0.1); border:1px solid #2a6f68; color:var(--cyan);
+.step-chip.current{
+  border-color:var(--amber); box-shadow:0 0 6px rgba(255,138,30,0.35);
 }
+
+.contact-row{display:flex; gap:6px; margin-top:8px; flex-wrap:wrap; align-items:center;}
+.contact-btn{
+  display:inline-flex; align-items:center; justify-content:center; gap:5px;
+  padding:6px 10px; border-radius:5px; font-family:'Orbitron'; font-size:9px;
+  text-decoration:none; background:rgba(255,138,30,0.12); border:1px solid var(--amber-dim);
+  color:var(--amber); cursor:pointer; flex:1;
+}
+.contact-btn:hover{border-color:var(--amber); background:rgba(255,138,30,0.2);}
 .contact-btn.ready{
   background:rgba(63,240,140,0.16); border-color:var(--done); color:var(--done);
+}
+.contact-btn.call{
+  flex:0 0 auto; background:rgba(63,240,224,0.1); border-color:#2a6f68; color:var(--cyan);
+}
+.sms-preview{
+  margin-top:5px; font-size:11px; color:var(--text-dim); background:#101215;
+  border-left:2px solid var(--amber-dim); padding:4px 7px; border-radius:0 4px 4px 0;
+  line-height:1.35;
 }
 
 .byline{font-size:11px; color:var(--text-dim); margin-top:5px; opacity:0.85; display:flex; justify-content:space-between; align-items:center;}
@@ -494,7 +507,7 @@ textarea{resize:vertical; min-height:50px;}
         <input type="text" id="f-customer" placeholder="Customer name">
       </div>
       <div>
-        <label>Customer phone (for pickup text)</label>
+        <label>Customer phone (for stage texts)</label>
         <input type="tel" id="f-phone" placeholder="e.g. 307-555-0192">
       </div>
     </div>
@@ -761,7 +774,79 @@ function defaultSteps(cad = false, cut = false, weld = false, finish = false) {
   return { cad: Boolean(cad), cut: Boolean(cut), weld: Boolean(weld), finish: Boolean(finish) };
 }
 
+function resolveActiveStepKey(steps, preferredKey) {
+  const s = steps || defaultSteps();
+  if (preferredKey && s[preferredKey]) return preferredKey;
+  if (s.finish) return 'finish';
+  if (s.weld) return 'weld';
+  if (s.cut) return 'cut';
+  if (s.cad) return 'cad';
+  return null;
+}
+
+function getStageSmsInfo(o) {
+  const cust = (o.customer && o.customer.trim()) ? o.customer.trim() : 'there';
+  const proj = (o.name && o.name.trim()) ? o.name.trim() : 'your custom metal project';
+  const steps = o.steps || defaultSteps();
+  const activeStep = resolveActiveStepKey(steps, o.activeStep);
+
+  if (o.status === 'done') {
+    return {
+      stageTag: 'READY FOR PICKUP',
+      isReady: true,
+      body: `Hello ${cust}, this is WB Fab. Great news—your "${proj}" order is completely finished and ready for pickup or delivery. Please let us know what time works best for you. Thank you for choosing WB Fab!`
+    };
+  }
+
+  if (activeStep === 'finish') {
+    return {
+      stageTag: 'FINISHING STAGE',
+      isReady: false,
+      body: `Hello ${cust}, this is WB Fab with an update on "${proj}". Metal fabrication is complete and your project is now in the final finishing and coating stage. We will reach out as soon as it is inspected and ready for pickup!`
+    };
+  }
+
+  if (activeStep === 'weld') {
+    return {
+      stageTag: 'WELD & FAB STAGE',
+      isReady: false,
+      body: `Hello ${cust}, this is WB Fab with an update on "${proj}". Your parts have been cut and are now on the shop bench for welding, grinding, and assembly. We will update you as we move into final finishing!`
+    };
+  }
+
+  if (activeStep === 'cut') {
+    return {
+      stageTag: 'PLASMA CUT STAGE',
+      isReady: false,
+      body: `Hello ${cust}, this is WB Fab with an update on "${proj}". Your design is finalized and your project is currently on the CNC plasma table being cut from steel. We will keep you posted as we move to the next step!`
+    };
+  }
+
+  if (activeStep === 'cad') {
+    return {
+      stageTag: 'CAD DESIGN STAGE',
+      isReady: false,
+      body: `Hello ${cust}, this is WB Fab reaching out about "${proj}". We have started designing your product in CAD and preparing the cut files, and we will update you as we move to the next steps!`
+    };
+  }
+
+  if (o.status === 'wip') {
+    return {
+      stageTag: 'IN PROGRESS',
+      isReady: false,
+      body: `Hello ${cust}, this is WB Fab with a quick update on "${proj}". Your project is now actively in progress in our shop, and we will update you as we move through each stage of fabrication.`
+    };
+  }
+
+  return {
+    stageTag: 'ORDER QUEUED',
+    isReady: false,
+    body: `Hello ${cust}, thank you for your order with WB Fab! We have "${proj}" logged on our job board and scheduled for production. We will message you as soon as we begin the design and fabrication process.`
+  };
+}
+
 function normalizeOrder(o) {
+  const mergedSteps = Object.assign(defaultSteps(), (o && o.steps) ? o.steps : {});
   return Object.assign({
     id: 'job-' + Date.now(),
     name: 'Untitled',
@@ -779,14 +864,16 @@ function normalizeOrder(o) {
     due: '',
     priority: 'norm',
     notes: '',
-    steps: defaultSteps(),
+    steps: mergedSteps,
+    activeStep: resolveActiveStepKey(mergedSteps, o ? o.activeStep : null),
     status: 'todo',
     archived: false,
     imgData: null,
     updatedBy: 'Dylan',
     updatedAt: Date.now()
   }, o, {
-    steps: Object.assign(defaultSteps(), (o && o.steps) ? o.steps : {})
+    steps: mergedSteps,
+    activeStep: resolveActiveStepKey(mergedSteps, o ? o.activeStep : null)
   });
 }
 
@@ -836,6 +923,7 @@ function loadLocalData() {
           priority: 'high',
           notes: 'Plasma: 45A / 73 PSI. Matte black powder coat, weld 2x2 angle mounting brackets on back.',
           steps: defaultSteps(true, true, false, false),
+          activeStep: 'cut',
           status: 'wip',
           archived: false,
           updatedBy: 'Dylan',
@@ -859,6 +947,7 @@ function loadLocalData() {
           priority: 'norm',
           notes: '1/2in plasma pierced bolt holes, raw steel deburred.',
           steps: defaultSteps(true, false, false, false),
+          activeStep: 'cad',
           status: 'todo',
           archived: false,
           updatedBy: 'Jacob',
@@ -882,6 +971,7 @@ function loadLocalData() {
           priority: 'norm',
           notes: 'Plasma: 45A / 73 PSI. Clear coat over torched patina.',
           steps: defaultSteps(true, true, true, true),
+          activeStep: 'finish',
           status: 'done',
           archived: false,
           updatedBy: 'Dylan',
@@ -1394,24 +1484,22 @@ function cardHtml(o) {
   const priceDisplay = o.price ? `$${Number(o.price).toLocaleString()}` : '';
 
   const steps = o.steps || defaultSteps();
+  const activeStep = resolveActiveStepKey(steps, o.activeStep);
   const stepsHtml = STEP_KEYS.map(s => {
     const isDone = Boolean(steps[s.key]);
-    return `<div class="step-chip ${isDone ? 'done' : ''}" onclick="toggleStep('${esc(o.id)}','${s.key}')">${isDone ? '✓ ' : ''}${s.label}</div>`;
+    const isCurrent = (o.status !== 'done' && activeStep === s.key);
+    return `<div class="step-chip ${isDone ? 'done' : ''} ${isCurrent ? 'current' : ''}" onclick="toggleStep('${esc(o.id)}','${s.key}')">${isDone ? '✓ ' : ''}${s.label}</div>`;
   }).join('');
 
-  let contactHtml = '';
-  if (o.phone) {
-    const cleanPhone = String(o.phone).replace(/[^\d+]/g, '');
-    const smsBody = encodeURIComponent(
-      o.status === 'done'
-        ? `Hey ${o.customer || 'there'}, this is WB Fab! Your "${o.name}" order is finished and ready for pickup.`
-        : `Hey ${o.customer || 'there'}, this is WB Fab checking in on your "${o.name}" order.`
-    );
-    contactHtml = `<div class="contact-row">
-      <a class="contact-btn ${o.status === 'done' ? 'ready' : ''}" href="sms:${esc(cleanPhone)}?body=${smsBody}">💬 ${o.status === 'done' ? 'TEXT READY FOR PICKUP' : 'TEXT CUSTOMER'}</a>
-      <a class="contact-btn" href="tel:${esc(cleanPhone)}">📞 ${esc(o.phone)}</a>
-    </div>`;
-  }
+  const smsInfo = getStageSmsInfo(o);
+  const cleanPhone = o.phone ? String(o.phone).replace(/[^\d+]/g, '') : '';
+  const smsHref = `sms:${esc(cleanPhone)}?body=${encodeURIComponent(smsInfo.body)}`;
+
+  const contactHtml = `<div class="contact-row">
+    <a class="contact-btn ${smsInfo.isReady ? 'ready' : ''}" href="${smsHref}" onclick="handleSendStageMessage(event, '${esc(o.id)}')">💬 SEND MESSAGE: ${esc(smsInfo.stageTag)}</a>
+    ${cleanPhone ? `<a class="contact-btn call" href="tel:${esc(cleanPhone)}">📞 ${esc(o.phone)}</a>` : ''}
+  </div>
+  <div class="sms-preview"><b>Stage Text:</b> "${esc(smsInfo.body)}"</div>`;
 
   return `<div class="card pr-${esc(o.status || 'todo')}">
     <div class="thumb" ${imgSrc ? `onclick="viewImg('${esc(o.id)}')"` : ''}>${img}</div>
@@ -1454,6 +1542,25 @@ function cardHtml(o) {
   </div>`;
 }
 
+async function handleSendStageMessage(e, id) {
+  const o = orders.find(x => x.id === id);
+  if (!o) return;
+  const smsInfo = getStageSmsInfo(o);
+  try {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      await navigator.clipboard.writeText(smsInfo.body);
+    } else {
+      const ta = document.createElement('textarea');
+      ta.value = smsInfo.body;
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand('copy');
+      ta.remove();
+    }
+  } catch (err) {}
+  toast(`Stage text copied & opening SMS (${smsInfo.stageTag})`);
+}
+
 function esc(s) {
   return String(s).replace(/[&<>"']/g, c => ({
     '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
@@ -1475,21 +1582,19 @@ async function toggleStep(id, stepKey) {
   if (!o.steps) o.steps = defaultSteps();
   o.steps[stepKey] = !o.steps[stepKey];
 
-  const allDone = STEP_KEYS.every(k => o.steps[k.key]);
-  const anyDone = STEP_KEYS.some(k => o.steps[k.key]);
-  if (allDone && o.status !== 'done') {
-    o.status = 'done';
-    toast(`All fabrication steps complete — "${o.name}" moved to DONE!`);
-  } else if (anyDone && o.status === 'todo') {
-    o.status = 'wip';
-    toast(`Started "${o.name}" — moved to IN PROGRESS`);
+  if (o.steps[stepKey]) {
+    o.activeStep = stepKey;
+  } else {
+    o.activeStep = resolveActiveStepKey(o.steps, null);
   }
 
+  const smsInfo = getStageSmsInfo(o);
   o.updatedBy = currentWho;
   o.updatedAt = Date.now();
   prevState = recordStateSnapshot(orders);
   saveLocalOrders();
   render();
+  toast(`${stepKey.toUpperCase()} ${o.steps[stepKey] ? 'selected' : 'cleared'} — Message set to ${smsInfo.stageTag}`);
   await syncWithCloud(true);
 }
 
@@ -1558,9 +1663,6 @@ async function setStatus(id, status) {
   if (!o) return;
   o.archived = false;
   o.status = status;
-  if (status === 'done') {
-    o.steps = defaultSteps(true, true, true, true);
-  }
   o.updatedBy = currentWho;
   o.updatedAt = Date.now();
   prevState = recordStateSnapshot(orders);
@@ -1612,9 +1714,7 @@ function renderImgPickPrompt() {
 }
 
 function openPhotoStudio() {
-  // First attempt native file picker synchronously in the tap gesture
   triggerNativeFileInput(false);
-  // Also open the Photo & Sketch Studio modal so the user always sees a working upload/sketch screen
   document.getElementById('f-img-url').value = '';
   document.getElementById('photoOverlay').classList.add('show');
   initSketchPad();
@@ -1720,7 +1820,6 @@ function clearSketchPad() {
   const ctx = canvas.getContext('2d');
   ctx.fillStyle = '#0c0d0f';
   ctx.fillRect(0, 0, canvas.width, canvas.height);
-  // Subtle blueprint grid
   ctx.strokeStyle = '#1c2026';
   ctx.lineWidth = 1;
   for (let x = 24; x < canvas.width; x += 24) {
@@ -1745,7 +1844,6 @@ function drawBracketTemplate() {
   ctx.strokeStyle = '#e8ebef';
   ctx.lineWidth = 2.5;
   ctx.strokeRect(110, 40, 260, 140);
-  // 4 mounting holes
   ctx.strokeStyle = '#ff8a1e';
   [[135, 65], [345, 65], [135, 155], [345, 155]].forEach(([cx, cy]) => {
     ctx.beginPath();
@@ -1891,7 +1989,6 @@ document.getElementById('f-img-cam').addEventListener('change', async e => {
   e.target.value = '';
 });
 
-// Support pasting an image or screenshot when the order sheet is open
 document.addEventListener('paste', async e => {
   const overlay = document.getElementById('overlay');
   if (!overlay || !overlay.classList.contains('show')) return;
